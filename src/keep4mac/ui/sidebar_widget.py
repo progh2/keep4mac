@@ -40,6 +40,7 @@ class SidebarWidget(QWidget):
     new_note_requested = pyqtSignal()
     sync_requested = pyqtSignal()
     open_web_requested = pyqtSignal()
+    about_requested = pyqtSignal()
     logout_requested = pyqtSignal()
     quit_requested = pyqtSignal()
 
@@ -71,6 +72,7 @@ class SidebarWidget(QWidget):
         self._refresh_autostart_btn()
 
         for icon, label, signal in [
+            ("?", "정보", self.about_requested),
             ("↩", "로그아웃", self.logout_requested),
             ("✕", "종료", self.quit_requested),
         ]:

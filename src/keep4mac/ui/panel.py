@@ -7,6 +7,7 @@ from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPainterPath, QPen, 
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QStackedWidget, QWidget
 
 from keep4mac.api.keep_client import KeepClient
+from keep4mac.ui.about_dialog import AboutDialog
 from keep4mac.ui.login_widget import LoginWidget
 from keep4mac.ui.note_editor_widget import NoteEditorWidget
 from keep4mac.ui.note_list_widget import NoteListWidget
@@ -45,6 +46,7 @@ class MainPanel(QWidget):
         self._sidebar.new_note_requested.connect(self._on_new_note)
         self._sidebar.sync_requested.connect(self._on_sync)
         self._sidebar.open_web_requested.connect(self._on_open_web)
+        self._sidebar.about_requested.connect(self._on_about)
         self._sidebar.logout_requested.connect(self._on_logout)
         self._sidebar.quit_requested.connect(self._on_quit)
         self._sidebar.hide()
@@ -143,6 +145,10 @@ class MainPanel(QWidget):
 
     def _on_open_web(self):
         QDesktopServices.openUrl(QUrl("https://keep.google.com"))
+
+    def _on_about(self):
+        dlg = AboutDialog(self)
+        dlg.exec()
 
     def _on_logout(self):
         self._client.logout()
