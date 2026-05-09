@@ -50,8 +50,10 @@ class MainPanel(QWidget):
         self._sidebar.hide()
         root.addWidget(self._sidebar)
 
-        # 콘텐츠 스택
+        # 콘텐츠 스택 — WA_TranslucentBackground 환경에서 페이지 전환 시 잔상 방지
         self._stack = QStackedWidget()
+        self._stack.setAutoFillBackground(True)
+        self._stack.setStyleSheet("QStackedWidget { background: #ffffff; }")
 
         self._login_w = LoginWidget(self._client)
         self._login_w.login_success.connect(self._on_login_success)
