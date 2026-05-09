@@ -81,28 +81,8 @@ class KeepClient:
         keyring.set_password(_SERVICE, _KEY_AUTH, "password")
         logger.info("로그인 성공, 토큰 저장 완료")
 
-    def login_with_oauth(self, email: str, access_token: str) -> None:
-        """OAuth 액세스 토큰으로 Keep 인증."""
-        try:
-            self._keep.authenticate(email, access_token)
-        except Exception as e:
-            raise AuthError(f"OAuth 인증 실패: {e}") from e
-
-        self._email = email
-        self._logged_in = True
-        keyring.set_password(_SERVICE, _KEY_EMAIL, email)
-        keyring.set_password(_SERVICE, _KEY_AUTH, "oauth")
-        # master token은 없으므로 _KEY_TOKEN은 저장 안 함
-        logger.info("OAuth 로그인 성공: %s", email)
-
     def resume(self) -> bool:
-        """저장된 인증 정보로 재인증. 방식에 따라 password/oauth 분기."""
-        auth = keyring.get_password(_SERVICE, _KEY_AUTH) or "password"
-        if auth == "oauth":
-            return self._resume_oauth()
-        return self._resume_password()
-
-    def _resume_password(self) -> bool:
+        """Keychain에 저장된 마스터 토큰으로 재인증."""
         email = keyring.get_password(_SERVICE, _KEY_EMAIL)
         token = keyring.get_password(_SERVICE, _KEY_TOKEN)
         if not email or not token:
@@ -117,32 +97,13 @@ class KeepClient:
         logger.info("마스터 토큰으로 재인증 성공")
         return True
 
-    def _resume_oauth(self) -> bool:
-        try:
-            from keep4mac.api.oauth_flow import OAuthFlow
-            flow = OAuthFlow()
-            email, token = flow.authenticate()   # 저장된 토큰 갱신
-            self._keep.authenticate(email, token)
-            self._email = email
-            self._logged_in = True
-            logger.info("OAuth 토큰으로 재인증 성공")
-            return True
-        except Exception as e:
-            logger.warning("OAuth 재인증 실패: %s", e)
-            return False
-
     def logout(self) -> None:
-        """로그아웃 및 저장된 인증 정보 삭제."""
+        """로그아웃 및 Keychain 인증 정보 삭제."""
         for key in (_KEY_TOKEN, _KEY_EMAIL, _KEY_AUTH):
             try:
                 keyring.delete_password(_SERVICE, key)
             except keyring.errors.PasswordDeleteError:
                 pass
-        try:
-            from keep4mac.api.oauth_flow import OAuthFlow
-            OAuthFlow().clear()
-        except Exception:
-            pass
         self._logged_in = False
         self._email = None
 

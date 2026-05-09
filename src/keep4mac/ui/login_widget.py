@@ -1,262 +1,171 @@
-import os
 import subprocess
 
-from PyQt6.QtCore import QThread, Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QFileDialog, QFrame, QLabel, QLineEdit, QPushButton,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QFrame, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QVBoxLayout, QWidget,
 )
 
 from keep4mac.api.keep_client import AuthError, KeepClient
-from keep4mac.api.oauth_flow import CONFIG_DIR, CREDENTIALS_FILE, OAuthError, OAuthFlow
 
-# ── OAuth 워커 스레드 ──────────────────────────────────────────────
-
-class _OAuthWorker(QThread):
-    success = pyqtSignal(str, str)   # email, access_token
-    error = pyqtSignal(str)
-
-    def run(self):
-        try:
-            email, token = OAuthFlow().authenticate()
-            self.success.emit(email, token)
-        except Exception as e:
-            self.error.emit(str(e))
+_APP_PASSWORD_URL = "https://myaccount.google.com/apppasswords"
+_2FA_URL = "https://myaccount.google.com/signinoptions/two-step-verification"
 
 
-# ── 설정 안내 뷰 ──────────────────────────────────────────────────
-
-class _SetupGuideWidget(QWidget):
-    """credentials.json 설정 단계 안내."""
-
-    done = pyqtSignal()   # 파일 선택 완료 → 로그인 뷰로 돌아가기
-
-    def __init__(self):
-        super().__init__()
-        self._build_ui()
-
-    def _build_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(10)
-
-        title = QLabel("Google OAuth 설정")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #202124;")
-        layout.addWidget(title)
-
-        steps = QLabel(
-            "1. Google Cloud Console 접속\n"
-            "2. 프로젝트 생성 (또는 기존 선택)\n"
-            "3. API 및 서비스 → 사용자 인증 정보\n"
-            "4. 사용자 인증 정보 만들기 → OAuth 클라이언트 ID\n"
-            "5. 애플리케이션 유형: 데스크톱 앱\n"
-            "6. 만들기 → JSON 다운로드\n"
-            "7. 아래 버튼으로 파일 선택"
-        )
-        steps.setStyleSheet("font-size: 12px; color: #3c4043; line-height: 1.6;")
-        steps.setWordWrap(True)
-        layout.addWidget(steps)
-
-        open_console_btn = QPushButton("Google Cloud Console 열기 →")
-        open_console_btn.setStyleSheet(self._link_btn_style())
-        open_console_btn.clicked.connect(lambda: subprocess.run(
-            ["open", "https://console.cloud.google.com/apis/credentials"], check=False
-        ))
-        layout.addWidget(open_console_btn)
-
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: #e0e0e0;")
-        layout.addWidget(sep)
-
-        self._status = QLabel(f"저장 위치:\n{CREDENTIALS_FILE}")
-        self._status.setStyleSheet("font-size: 11px; color: #9aa0a6;")
-        self._status.setWordWrap(True)
-        layout.addWidget(self._status)
-
-        select_btn = QPushButton("credentials.json 선택하기")
-        select_btn.setStyleSheet(self._primary_btn_style())
-        select_btn.clicked.connect(self._pick_file)
-        layout.addWidget(select_btn)
-
-        layout.addStretch()
-
-    def _pick_file(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "credentials.json 선택", os.path.expanduser("~/Downloads"),
-            "JSON 파일 (*.json)"
-        )
-        if not path:
-            return
-        try:
-            OAuthFlow().set_credentials_file(path)
-            self._status.setText("✅ credentials.json 저장 완료!\n로그인 화면으로 돌아갑니다.")
-            self._status.setStyleSheet("font-size: 11px; color: #1e8e3e;")
-            self.done.emit()
-        except Exception as e:
-            self._status.setText(f"❌ 오류: {e}")
-            self._status.setStyleSheet("font-size: 11px; color: #ea4335;")
-
-    def _primary_btn_style(self):
-        return """
-            QPushButton {
-                background: #1a73e8; color: white;
-                border: none; border-radius: 6px;
-                padding: 9px; font-size: 13px;
-            }
-            QPushButton:hover { background: #1557b0; }
-        """
-
-    def _link_btn_style(self):
-        return """
-            QPushButton {
-                background: transparent; color: #1a73e8;
-                border: none; font-size: 12px; text-align: left;
-                padding: 0;
-            }
-            QPushButton:hover { color: #1557b0; }
-        """
+def _open_url(url: str) -> None:
+    subprocess.run(["open", url], check=False)
 
 
-# ── 메인 로그인 뷰 ─────────────────────────────────────────────────
-
-class _LoginView(QWidget):
-    go_setup = pyqtSignal()
+class LoginWidget(QWidget):
     login_success = pyqtSignal()
 
     def __init__(self, client: KeepClient):
         super().__init__()
         self._client = client
-        self._worker: _OAuthWorker | None = None
         self._build_ui()
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 36, 24, 24)
-        layout.setSpacing(12)
+        layout.setContentsMargins(24, 32, 24, 24)
+        layout.setSpacing(14)
 
+        # 타이틀
         title = QLabel("keep4mac")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #202124;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Google Keep 메뉴바 앱")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("font-size: 12px; color: #5f6368;")
-        layout.addWidget(subtitle)
+        sub = QLabel("Google Keep 메뉴바 앱")
+        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sub.setStyleSheet("font-size: 12px; color: #5f6368;")
+        layout.addWidget(sub)
 
-        layout.addSpacing(24)
+        layout.addSpacing(8)
 
-        # Google 로그인 (주 버튼)
-        self._oauth_btn = QPushButton("  Google로 로그인")
-        self._oauth_btn.setStyleSheet("""
-            QPushButton {
-                background: #fff; color: #3c4043;
-                border: 1px solid #dadce0; border-radius: 6px;
-                padding: 10px; font-size: 14px; font-weight: 500;
-            }
-            QPushButton:hover { background: #f8f9fa; border-color: #c6c6c6; }
-            QPushButton:disabled { color: #9aa0a6; }
-        """)
-        self._oauth_btn.clicked.connect(self._start_oauth)
-        layout.addWidget(self._oauth_btn)
-
-        # 상태 메시지
-        self._status = QLabel()
-        self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._status.setStyleSheet("font-size: 12px; color: #5f6368;")
-        self._status.setWordWrap(True)
-        self._status.hide()
-        layout.addWidget(self._status)
-
-        # 구분선
-        sep_layout = QVBoxLayout()
-        sep_layout.setContentsMargins(0, 8, 0, 8)
-        sep_lbl = QLabel("─── 또는 ───")
-        sep_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sep_lbl.setStyleSheet("font-size: 11px; color: #9aa0a6;")
-        sep_layout.addWidget(sep_lbl)
-        layout.addLayout(sep_layout)
-
-        # 앱 비밀번호 폼
+        # ── 이메일 입력 ──────────────────────────────────────
+        layout.addWidget(self._field_label("Google 계정 이메일"))
         self._email = QLineEdit()
-        self._email.setPlaceholderText("Google 이메일")
-        self._email.setStyleSheet(self._input_style())
+        self._email.setPlaceholderText("example@gmail.com")
+        self._email.setStyleSheet(self._input_css())
+        self._email.textChanged.connect(self._update_open_btn)
         layout.addWidget(self._email)
 
+        # ── 앱 비밀번호 만들기 박스 ──────────────────────────
+        step1_box = QFrame()
+        step1_box.setStyleSheet("""
+            QFrame {
+                background: #f8f9fa;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+            }
+        """)
+        box_layout = QVBoxLayout(step1_box)
+        box_layout.setContentsMargins(14, 12, 14, 12)
+        box_layout.setSpacing(6)
+
+        step1_title = QLabel("① 앱 비밀번호 만들기")
+        step1_title.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
+        box_layout.addWidget(step1_title)
+
+        step1_desc = QLabel("Google이 이메일 대신 앱용 16자리\n비밀번호를 생성해줍니다.")
+        step1_desc.setStyleSheet("font-size: 11px; color: #5f6368; background: transparent;")
+        box_layout.addWidget(step1_desc)
+
+        self._open_btn = QPushButton("Google 앱 비밀번호 페이지 열기  →")
+        self._open_btn.setStyleSheet("""
+            QPushButton {
+                background: #1a73e8; color: white;
+                border: none; border-radius: 6px;
+                padding: 8px 12px; font-size: 12px;
+                text-align: left;
+            }
+            QPushButton:hover { background: #1557b0; }
+            QPushButton:disabled { background: #a0c3ff; }
+        """)
+        self._open_btn.setEnabled(False)
+        self._open_btn.clicked.connect(self._open_app_password_page)
+        box_layout.addWidget(self._open_btn)
+
+        layout.addWidget(step1_box)
+
+        # ── 앱 비밀번호 입력 ─────────────────────────────────
+        layout.addWidget(self._field_label("② 앱 비밀번호 붙여넣기"))
         self._password = QLineEdit()
-        self._password.setPlaceholderText("앱 비밀번호 (16자리)")
+        self._password.setPlaceholderText("xxxx xxxx xxxx xxxx")
         self._password.setEchoMode(QLineEdit.EchoMode.Password)
-        self._password.setStyleSheet(self._input_style())
-        self._password.returnPressed.connect(self._do_password_login)
+        self._password.setStyleSheet(self._input_css())
+        self._password.returnPressed.connect(self._do_login)
         layout.addWidget(self._password)
 
-        self._error_label = QLabel()
-        self._error_label.setStyleSheet("color: #ea4335; font-size: 12px;")
-        self._error_label.setWordWrap(True)
-        self._error_label.hide()
-        layout.addWidget(self._error_label)
+        # ── 오류 메시지 ──────────────────────────────────────
+        self._error = QLabel()
+        self._error.setStyleSheet("font-size: 12px; color: #ea4335;")
+        self._error.setWordWrap(True)
+        self._error.hide()
+        layout.addWidget(self._error)
 
-        self._pw_btn = QPushButton("앱 비밀번호로 로그인")
-        self._pw_btn.setStyleSheet("""
+        # ── 로그인 버튼 ──────────────────────────────────────
+        self._login_btn = QPushButton("로그인")
+        self._login_btn.setStyleSheet("""
             QPushButton {
-                background: #f1f3f4; color: #3c4043;
+                background: #1a73e8; color: white;
                 border: none; border-radius: 6px;
-                padding: 9px; font-size: 13px;
+                padding: 10px; font-size: 14px; font-weight: 500;
             }
-            QPushButton:hover { background: #e8eaed; }
-            QPushButton:disabled { color: #9aa0a6; }
+            QPushButton:hover { background: #1557b0; }
+            QPushButton:disabled { background: #a0c3ff; }
         """)
-        self._pw_btn.clicked.connect(self._do_password_login)
-        layout.addWidget(self._pw_btn)
+        self._login_btn.clicked.connect(self._do_login)
+        layout.addWidget(self._login_btn)
+
+        # ── 2단계 인증 안내 ──────────────────────────────────
+        note_layout = QHBoxLayout()
+        note_layout.setContentsMargins(0, 0, 0, 0)
+        note_icon = QLabel("ℹ️")
+        note_icon.setFixedWidth(20)
+        note_text = QLabel("앱 비밀번호는 Google 2단계 인증이 필요합니다.")
+        note_text.setStyleSheet("font-size: 11px; color: #9aa0a6;")
+        note_link = QPushButton("설정하기 →")
+        note_link.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #1a73e8;
+                border: none; font-size: 11px; padding: 0;
+            }
+            QPushButton:hover { color: #1557b0; }
+        """)
+        note_link.clicked.connect(lambda: _open_url(_2FA_URL))
+        note_layout.addWidget(note_icon)
+        note_layout.addWidget(note_text)
+        note_layout.addWidget(note_link)
+        note_layout.addStretch()
+        layout.addLayout(note_layout)
 
         layout.addStretch()
 
-    # ── OAuth 플로우 ──────────────────────────────────────────
+    # ── 이벤트 ───────────────────────────────────────────────
 
-    def _start_oauth(self):
-        if not OAuthFlow().has_credentials:
-            self.go_setup.emit()
-            return
+    def _update_open_btn(self, email: str):
+        self._open_btn.setEnabled(bool(email.strip()))
 
-        self._oauth_btn.setEnabled(False)
-        self._oauth_btn.setText("  브라우저에서 로그인 중…")
-        self._show_status("브라우저 창에서 Google 계정을 선택해주세요.")
+    def _open_app_password_page(self):
+        """이메일 입력 후 Google 앱 비밀번호 페이지를 브라우저로 열기."""
+        _open_url(_APP_PASSWORD_URL)
+        self._password.setFocus()
 
-        self._worker = _OAuthWorker()
-        self._worker.success.connect(self._on_oauth_success)
-        self._worker.error.connect(self._on_oauth_error)
-        self._worker.start()
-
-    def _on_oauth_success(self, email: str, token: str):
-        try:
-            self._client.login_with_oauth(email, token)
-            self.login_success.emit()
-        except AuthError as e:
-            self._on_oauth_error(str(e))
-        finally:
-            self._reset_oauth_btn()
-
-    def _on_oauth_error(self, msg: str):
-        self._show_status(f"❌ {msg}", error=True)
-        self._reset_oauth_btn()
-
-    def _reset_oauth_btn(self):
-        self._oauth_btn.setEnabled(True)
-        self._oauth_btn.setText("  Google로 로그인")
-
-    # ── 앱 비밀번호 플로우 ────────────────────────────────────
-
-    def _do_password_login(self):
+    def _do_login(self):
         email = self._email.text().strip()
-        pw = self._password.text().strip()
-        if not email or not pw:
-            self._show_error("이메일과 비밀번호를 입력해주세요.")
+        pw = self._password.text().replace(" ", "").strip()  # 공백 자동 제거
+
+        if not email:
+            self._show_error("Google 계정 이메일을 입력해주세요.")
+            return
+        if not pw:
+            self._show_error("앱 비밀번호를 입력해주세요.")
             return
 
-        self._pw_btn.setEnabled(False)
-        self._pw_btn.setText("로그인 중…")
-        self._error_label.hide()
+        self._login_btn.setEnabled(False)
+        self._login_btn.setText("로그인 중…")
+        self._error.hide()
 
         try:
             self._client.login(email, pw)
@@ -264,50 +173,25 @@ class _LoginView(QWidget):
         except AuthError as e:
             self._show_error(str(e))
         finally:
-            self._pw_btn.setEnabled(True)
-            self._pw_btn.setText("앱 비밀번호로 로그인")
+            self._login_btn.setEnabled(True)
+            self._login_btn.setText("로그인")
 
     # ── 헬퍼 ─────────────────────────────────────────────────
 
-    def _show_status(self, msg: str, error: bool = False):
-        color = "#ea4335" if error else "#5f6368"
-        self._status.setStyleSheet(f"font-size: 12px; color: {color};")
-        self._status.setText(msg)
-        self._status.show()
-
     def _show_error(self, msg: str):
-        self._error_label.setText(msg)
-        self._error_label.show()
+        self._error.setText(msg)
+        self._error.show()
 
-    def _input_style(self) -> str:
+    def _field_label(self, text: str) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #3c4043;")
+        return lbl
+
+    def _input_css(self) -> str:
         return """
             QLineEdit {
                 border: 1px solid #dadce0; border-radius: 6px;
-                padding: 8px 12px; font-size: 13px;
+                padding: 9px 12px; font-size: 13px;
             }
-            QLineEdit:focus { border-color: #1a73e8; }
+            QLineEdit:focus { border-color: #1a73e8; outline: none; }
         """
-
-
-# ── 퍼블릭 위젯 ──────────────────────────────────────────────────
-
-class LoginWidget(QWidget):
-    login_success = pyqtSignal()
-
-    def __init__(self, client: KeepClient):
-        super().__init__()
-        self._stack = QStackedWidget(self)
-
-        self._login_view = _LoginView(client)
-        self._login_view.login_success.connect(self.login_success)
-        self._login_view.go_setup.connect(lambda: self._stack.setCurrentIndex(1))
-
-        self._setup_view = _SetupGuideWidget()
-        self._setup_view.done.connect(lambda: self._stack.setCurrentIndex(0))
-
-        self._stack.addWidget(self._login_view)   # 0
-        self._stack.addWidget(self._setup_view)   # 1
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._stack)
