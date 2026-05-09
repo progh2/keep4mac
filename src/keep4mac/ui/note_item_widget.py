@@ -1,8 +1,8 @@
 from typing import Callable
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
+from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from keep4mac.core.models import NoteModel, NoteType
 from keep4mac.core.url_utils import extract_urls, short_url
@@ -31,11 +31,18 @@ class NoteItemWidget(QFrame):
         self._fetch_fn = fetch_fn
         self._img_label: QLabel | None = None
         self._img_thread: _ImageThread | None = None
+        self._copy_btn: QPushButton | None = None
+        self._clip_text = self._build_clip_text(note)
         self._build_ui(note)
         self._apply_style(note.color_hex)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if note.image_url and fetch_fn:
             self._load_image(note.image_url)
+
+    @staticmethod
+    def _build_clip_text(note: NoteModel) -> str:
+        parts = [p for p in [note.title, note.content] if p]
+        return "\n".join(parts)
 
     def _build_ui(self, note: NoteModel):
         layout = QVBoxLayout(self)
@@ -72,7 +79,24 @@ class NoteItemWidget(QFrame):
             title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
             title_label.setWordWrap(True)
             title_row.addWidget(title_label, 1)
-            tl.addLayout(title_row)
+
+        self._copy_btn = QPushButton("📋")
+        self._copy_btn.setFixedSize(22, 22)
+        self._copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._copy_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; border: none;
+                font-size: 12px; border-radius: 4px;
+            }
+            QPushButton:hover { background: rgba(0,0,0,0.08); }
+            QPushButton:pressed { background: rgba(0,0,0,0.14); }
+        """)
+        self._copy_btn.setToolTip("클립보드에 복사")
+        self._copy_btn.clicked.connect(self._copy_to_clipboard)
+        self._copy_btn.hide()
+        title_row.addWidget(self._copy_btn)
+
+        tl.addLayout(title_row)
 
         # 전체 내용
         content = note.content
@@ -129,6 +153,22 @@ class NoteItemWidget(QFrame):
         scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                                Qt.TransformationMode.SmoothTransformation)
         self._img_label.setPixmap(scaled)
+
+    def enterEvent(self, event):
+        if self._copy_btn:
+            self._copy_btn.show()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self._copy_btn:
+            self._copy_btn.hide()
+        super().leaveEvent(event)
+
+    def _copy_to_clipboard(self):
+        QApplication.clipboard().setText(self._clip_text)
+        if self._copy_btn:
+            self._copy_btn.setText("✓")
+            QTimer.singleShot(1500, lambda: self._copy_btn.setText("📋") if self._copy_btn else None)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
