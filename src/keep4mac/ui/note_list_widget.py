@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QFrame, QLabel, QLineEdit,
     QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
 )
 
@@ -11,7 +11,6 @@ from keep4mac.ui.note_item_widget import NoteItemWidget
 
 class NoteListWidget(QWidget):
     note_selected = pyqtSignal(str)   # note_id
-    new_note_requested = pyqtSignal()
 
     def __init__(self, client: KeepClient):
         super().__init__()
@@ -59,58 +58,16 @@ class NoteListWidget(QWidget):
         scroll.setWidget(self._list_body)
         outer.addWidget(scroll)
 
-        # 하단 바
-        bar = QHBoxLayout()
-        bar.setContentsMargins(4, 8, 4, 8)
-
-        new_btn = QPushButton("＋  새 노트")
-        new_btn.setStyleSheet("""
-            QPushButton {
-                background: #1a73e8; color: white;
-                border: none; border-radius: 6px;
-                padding: 6px 14px; font-size: 12px;
-            }
-            QPushButton:hover { background: #1557b0; }
-        """)
-        new_btn.clicked.connect(self.new_note_requested)
-
-        self._sync_label = QLabel("")
-        self._sync_label.setStyleSheet("font-size: 11px; color: #9aa0a6;")
-
-        refresh_btn = QPushButton("↻")
-        refresh_btn.setFixedWidth(28)
-        refresh_btn.setToolTip("동기화")
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent; color: #5f6368;
-                border: 1px solid #dadce0; border-radius: 4px; font-size: 14px;
-            }
-            QPushButton:hover { background: #f1f3f4; }
-        """)
-        refresh_btn.clicked.connect(self.refresh)
-
-        bar.addWidget(new_btn)
-        bar.addStretch()
-        bar.addWidget(self._sync_label)
-        bar.addSpacing(4)
-        bar.addWidget(refresh_btn)
-        outer.addLayout(bar)
-
     # ── 데이터 ────────────────────────────────────────────────
 
     def load_notes(self):
         """Keep 서버 동기화 후 목록 갱신."""
         try:
             self._client.sync()
-            self._sync_label.setText("방금 동기화")
         except SyncError:
-            self._sync_label.setText("동기화 실패")
-
+            pass
         self._all_notes = self._client.get_notes()
         self._render(self._all_notes)
-
-    def refresh(self):
-        self.load_notes()
 
     # ── 검색 ─────────────────────────────────────────────────
 
@@ -148,7 +105,7 @@ class NoteListWidget(QWidget):
         if pinned:
             self._list_layout.insertWidget(idx, self._section_header("📌  고정됨")); idx += 1
             for note in pinned:
-                w = NoteItemWidget(note)
+                w = NoteItemWidget(note, fetch_fn=self._client.fetch_image)
                 w.clicked.connect(self.note_selected)
                 self._list_layout.insertWidget(idx, w); idx += 1
 
@@ -156,7 +113,7 @@ class NoteListWidget(QWidget):
             if pinned:
                 self._list_layout.insertWidget(idx, self._section_header("메모")); idx += 1
             for note in regular:
-                w = NoteItemWidget(note)
+                w = NoteItemWidget(note, fetch_fn=self._client.fetch_image)
                 w.clicked.connect(self.note_selected)
                 self._list_layout.insertWidget(idx, w); idx += 1
 

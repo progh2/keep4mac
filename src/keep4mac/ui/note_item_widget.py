@@ -1,23 +1,60 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+from typing import Callable
+
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
-from keep4mac.core.models import NoteModel
+from keep4mac.core.models import NoteModel, NoteType
+from keep4mac.core.url_utils import extract_urls, short_url
+
+
+class _ImageThread(QThread):
+    done = pyqtSignal(bytes)
+
+    def __init__(self, url: str, fetch_fn: Callable[[str], bytes | None]):
+        super().__init__()
+        self._url = url
+        self._fetch_fn = fetch_fn
+
+    def run(self):
+        data = self._fetch_fn(self._url)
+        if data:
+            self.done.emit(data)
 
 
 class NoteItemWidget(QFrame):
     clicked = pyqtSignal(str)  # note_id
 
-    def __init__(self, note: NoteModel):
+    def __init__(self, note: NoteModel, fetch_fn: Callable[[str], bytes | None] | None = None):
         super().__init__()
         self._note_id = note.id
+        self._fetch_fn = fetch_fn
+        self._img_label: QLabel | None = None
+        self._img_thread: _ImageThread | None = None
         self._build_ui(note)
         self._apply_style(note.color_hex)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        if note.image_url and fetch_fn:
+            self._load_image(note.image_url)
 
     def _build_ui(self, note: NoteModel):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # 이미지 영역
+        if note.image_url:
+            self._img_label = QLabel()
+            self._img_label.setFixedHeight(130)
+            self._img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._img_label.setStyleSheet("background: #e8eaed;")
+            layout.addWidget(self._img_label)
+
+        # 텍스트 영역
+        text_w = QFrame()
+        tl = QVBoxLayout(text_w)
+        tl.setContentsMargins(12, 10, 12, 10)
+        tl.setSpacing(4)
 
         # 제목 행
         title_row = QHBoxLayout()
@@ -33,18 +70,35 @@ class NoteItemWidget(QFrame):
         if note.title or note.pinned:
             title_label = QLabel(note.title)
             title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
-            title_label.setMaximumWidth(270)
+            title_label.setWordWrap(True)
             title_row.addWidget(title_label, 1)
-            layout.addLayout(title_row)
+            tl.addLayout(title_row)
 
-        # 미리보기
-        preview = note.preview
-        if preview:
-            preview_label = QLabel(preview)
-            preview_label.setStyleSheet("font-size: 12px; color: #5f6368; background: transparent;")
-            preview_label.setMaximumHeight(34)
-            preview_label.setWordWrap(True)
-            layout.addWidget(preview_label)
+        # 전체 내용
+        content = note.content
+        if content:
+            content_label = QLabel(content)
+            content_label.setStyleSheet("font-size: 12px; color: #5f6368; background: transparent;")
+            content_label.setWordWrap(True)
+            tl.addWidget(content_label)
+
+        # 링크 인디케이터
+        all_text = note.text + " ".join(i.text for i in note.checklist_items)
+        urls = extract_urls(all_text)
+        if urls:
+            link_row = QHBoxLayout()
+            link_row.setContentsMargins(0, 2, 0, 0)
+            link_row.setSpacing(4)
+            link_icon = QLabel("🔗")
+            link_icon.setStyleSheet("font-size: 11px; background: transparent;")
+            link_row.addWidget(link_icon)
+            suffix = f" 외 {len(urls) - 1}개" if len(urls) > 1 else ""
+            link_lbl = QLabel(short_url(urls[0], 36) + suffix)
+            link_lbl.setStyleSheet("font-size: 11px; color: #1a73e8; background: transparent;")
+            link_row.addWidget(link_lbl, 1)
+            tl.addLayout(link_row)
+
+        layout.addWidget(text_w)
 
     def _apply_style(self, bg_hex: str):
         self.setStyleSheet(f"""
@@ -57,6 +111,24 @@ class NoteItemWidget(QFrame):
                 border: 1px solid rgba(0,0,0,0.28);
             }}
         """)
+
+    def _load_image(self, url: str):
+        self._img_thread = _ImageThread(url, self._fetch_fn)
+        self._img_thread.done.connect(self._on_image_ready)
+        self._img_thread.start()
+
+    def _on_image_ready(self, data: bytes):
+        if self._img_label is None:
+            return
+        pixmap = QPixmap()
+        pixmap.loadFromData(data)
+        if pixmap.isNull():
+            return
+        w = self._img_label.width() or 270
+        h = self._img_label.height()
+        scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                               Qt.TransformationMode.SmoothTransformation)
+        self._img_label.setPixmap(scaled)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

@@ -53,6 +53,7 @@ class NoteModel:
     pinned: bool
     color: NoteColor
     checklist_items: list[ChecklistItem] = field(default_factory=list)
+    image_url: str | None = None
 
     @property
     def color_hex(self) -> str:
@@ -65,3 +66,11 @@ class NoteModel:
             return "\n".join(lines)
         lines = self.text.strip().splitlines()
         return "\n".join(lines[:2])
+
+    @property
+    def content(self) -> str:
+        if self.note_type == NoteType.LIST:
+            return "\n".join(
+                f"{'☑' if i.checked else '☐'} {i.text}" for i in self.checklist_items
+            )
+        return self.text.strip()
