@@ -31,11 +31,24 @@ for plugin_dir in platforms styles imageformats; do
     fi
 done
 
-echo "▶ qt.conf 추가..."
-cat > "${APP_PATH}/Contents/MacOS/qt.conf" << 'QTCONF'
-[Paths]
-Plugins = ../Frameworks/PyQt6/Qt6/plugins
-QTCONF
+echo "▶ dist-info → Contents/Resources 이동 (codesign 충돌 방지)..."
+FRAMEWORKS="${APP_PATH}/Contents/Frameworks"
+RESOURCES="${APP_PATH}/Contents/Resources"
+find "$FRAMEWORKS" -maxdepth 1 -name "*.dist-info" | while read d; do
+    name=$(basename "$d")
+    if [ ! -d "$RESOURCES/$name" ]; then
+        cp -rL "$d" "$RESOURCES/$name"   # Resources에 없는 경우만 복사
+    fi
+    rm -rf "$d"   # Frameworks의 symlink(또는 실제 디렉토리) 삭제
+    echo "  ✓ $name"
+done
+
+echo "▶ 앱 서명 (ad-hoc)..."
+find "${APP_PATH}" \( -name "*.dylib" -o -name "*.so" \) | while read f; do
+    codesign --force --sign - "$f" 2>/dev/null
+done
+codesign --force --sign - --entitlements entitlements.plist "${APP_PATH}" 2>&1
+echo "  ✓ 서명 완료"
 
 echo "▶ DMG 생성..."
 MOUNT_DIR="/tmp/${APP_NAME}_work_$$"
@@ -50,7 +63,7 @@ hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
 echo "  마운트: $MOUNT_DIR"
 
 # .app 복사 + Applications 심볼릭 링크
-cp -r "$APP_PATH" "$MOUNT_DIR/"
+ditto "$APP_PATH" "$MOUNT_DIR/keep4mac.app"
 ln -s /Applications "$MOUNT_DIR/Applications"
 
 # 마운트 해제
