@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 
 from keep4mac.api.keep_client import AuthError, KeepClient
+from keep4mac.i18n import gettext as _
 
 
 class _BrowserLoginThread(QThread):
@@ -54,7 +55,7 @@ class LoginWidget(QWidget):
         )
         hl.addWidget(title)
 
-        subtitle = QLabel("Google Keep 메뉴바 앱")
+        subtitle = QLabel(_("Google Keep Menu Bar App"))
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(
             "font-size: 11px; color: rgba(255,255,255,0.85); background: transparent;"
@@ -84,15 +85,14 @@ class LoginWidget(QWidget):
         cl.setContentsMargins(16, 14, 16, 14)
         cl.setSpacing(6)
 
-        card_title = QLabel("Google 계정으로 로그인")
+        card_title = QLabel(_("Sign in with Google Account"))
         card_title.setStyleSheet(
             "font-size: 13px; font-weight: 600; color: #202124; background: transparent;"
         )
         cl.addWidget(card_title)
 
         card_desc = QLabel(
-            "버튼을 누르면 Chrome 창이 열립니다.\n"
-            "Google 계정으로 로그인하면 자동으로 연결됩니다."
+            _("Click the button to open a browser.\nSign in with your Google account to connect automatically.")
         )
         card_desc.setWordWrap(True)
         card_desc.setStyleSheet(
@@ -102,7 +102,7 @@ class LoginWidget(QWidget):
         bl.addWidget(card)
 
         # 로그인 버튼
-        self._login_btn = QPushButton("Google로 로그인")
+        self._login_btn = QPushButton(_("Sign in with Google"))
         self._login_btn.setMinimumHeight(46)
         self._login_btn.setStyleSheet(self._btn_css(active=True))
         self._login_btn.clicked.connect(self._do_login)
@@ -124,7 +124,7 @@ class LoginWidget(QWidget):
 
     def _do_login(self):
         self._login_btn.setEnabled(False)
-        self._login_btn.setText("브라우저 열리는 중…")
+        self._login_btn.setText(_("Opening browser…"))
         self._error.hide()
 
         self._thread = _BrowserLoginThread()
@@ -148,7 +148,7 @@ class LoginWidget(QWidget):
 
     def _reset_button(self):
         self._login_btn.setEnabled(True)
-        self._login_btn.setText("Google로 로그인")
+        self._login_btn.setText(_("Sign in with Google"))
 
     def _show_error(self, msg: str):
         self._error.setText(msg)

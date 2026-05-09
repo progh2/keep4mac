@@ -1,0 +1,102 @@
+# English translation for keep4mac
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgid "New Note"
+msgstr ""
+
+msgid "Sync"
+msgstr ""
+
+msgid "Web Keep"
+msgstr ""
+
+msgid "🚀\nAutostart"
+msgstr ""
+
+msgid "Autostart enabled (click to disable)"
+msgstr ""
+
+msgid "Start at login (click to enable)"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Quit"
+msgstr ""
+
+msgid "Google Keep Menu Bar App"
+msgstr ""
+
+msgid "Sign in with Google Account"
+msgstr ""
+
+msgid "Click the button to open a browser.\nSign in with your Google account to connect automatically."
+msgstr ""
+
+msgid "Sign in with Google"
+msgstr ""
+
+msgid "Opening browser…"
+msgstr ""
+
+msgid "🔍  Search…"
+msgstr ""
+
+msgid "No notes"
+msgstr ""
+
+msgid "📌  Pinned"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+msgid "Copy to clipboard"
+msgstr ""
+
+msgid "Edit Note"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Enter note content…"
+msgstr ""
+
+msgid "🗑  Delete Image"
+msgstr ""
+
+msgid "🔗 Links"
+msgstr ""
+
+msgid "Pin / Unpin"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Loading image…"
+msgstr ""
+
+msgid "About keep4mac"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Made by"
+msgstr ""
+
+msgid "Close"
+msgstr ""

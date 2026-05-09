@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 from keep4mac.api.keep_client import KeepClient
 from keep4mac.core.models import COLOR_HEX, NoteColor, NoteModel, NoteType
 from keep4mac.core.url_utils import extract_urls, short_url
+from keep4mac.i18n import gettext as _
 
 # 색상 팔레트 순서 (DEFAULT는 흰색 맨 앞)
 _PALETTE = [
@@ -72,7 +73,7 @@ class NoteEditorWidget(QWidget):
         back_btn.clicked.connect(self._on_back)
         hl.addWidget(back_btn)
 
-        self._header_label = QLabel("노트 편집")
+        self._header_label = QLabel(_("Edit Note"))
         self._header_label.setStyleSheet(
             "font-size: 14px; font-weight: 600; color: white; background: transparent;"
         )
@@ -80,7 +81,7 @@ class NoteEditorWidget(QWidget):
 
         self._delete_btn = QPushButton("🗑")
         self._delete_btn.setFixedSize(32, 32)
-        self._delete_btn.setToolTip("삭제")
+        self._delete_btn.setToolTip(_("Delete"))
         self._delete_btn.setStyleSheet("""
             QPushButton { background: transparent; color: white; border: none; font-size: 15px; }
             QPushButton:hover { background: rgba(255,255,255,0.2); border-radius: 16px; }
@@ -99,7 +100,7 @@ class NoteEditorWidget(QWidget):
         bl.setSpacing(10)
 
         self._title_edit = QLineEdit()
-        self._title_edit.setPlaceholderText("제목")
+        self._title_edit.setPlaceholderText(_("Title"))
         self._title_edit.setStyleSheet("""
             QLineEdit {
                 font-size: 16px; font-weight: 600; color: #202124;
@@ -111,7 +112,7 @@ class NoteEditorWidget(QWidget):
 
         # 텍스트 노트 편집기
         self._body_edit = QTextEdit()
-        self._body_edit.setPlaceholderText("내용을 입력하세요…")
+        self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._body_edit.setStyleSheet("""
             QTextEdit { font-size: 13px; color: #202124; border: none; background: transparent; }
         """)
@@ -148,7 +149,7 @@ class NoteEditorWidget(QWidget):
         self._img_display.setStyleSheet("background: #e8eaed; border-radius: 6px;")
         img_l.addWidget(self._img_display)
 
-        img_del_btn = QPushButton("🗑  이미지 삭제")
+        img_del_btn = QPushButton(_("🗑  Delete Image"))
         img_del_btn.setStyleSheet("""
             QPushButton {
                 background: transparent; color: #c5221f;
@@ -172,7 +173,7 @@ class NoteEditorWidget(QWidget):
         links_l.setContentsMargins(10, 8, 10, 8)
         links_l.setSpacing(4)
 
-        links_header = QLabel("🔗 링크")
+        links_header = QLabel(_("🔗 Links"))
         links_header.setStyleSheet(
             "font-size: 11px; font-weight: 600; color: #5f6368; background: transparent;"
         )
@@ -219,7 +220,7 @@ class NoteEditorWidget(QWidget):
         self._pin_btn = QPushButton("📌")
         self._pin_btn.setFixedSize(32, 32)
         self._pin_btn.setCheckable(True)
-        self._pin_btn.setToolTip("고정 / 해제")
+        self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._pin_btn.clicked.connect(self._on_pin_toggle)
         fl.addWidget(self._pin_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
@@ -227,7 +228,7 @@ class NoteEditorWidget(QWidget):
         self._refresh_palette()
         self._refresh_pin_btn()
 
-        save_btn = QPushButton("저장")
+        save_btn = QPushButton(_("Save"))
         save_btn.setMinimumWidth(80)
         save_btn.setStyleSheet("""
             QPushButton {
@@ -252,7 +253,7 @@ class NoteEditorWidget(QWidget):
             return
         self._note_id = note_id
         self._is_new = False
-        self._header_label.setText("노트 편집")
+        self._header_label.setText(_("Edit Note"))
         self._delete_btn.show()
         self._populate(note)
 
@@ -261,7 +262,7 @@ class NoteEditorWidget(QWidget):
         self._is_new = True
         self._image_url = None
         self._is_pinned = False
-        self._header_label.setText("새 노트")
+        self._header_label.setText(_("New Note"))
         self._delete_btn.hide()
         self._title_edit.clear()
         self._body_edit.clear()
@@ -328,7 +329,7 @@ class NoteEditorWidget(QWidget):
             self._img_section.hide()
             return
         self._img_display.clear()
-        self._img_display.setText("이미지 불러오는 중…")
+        self._img_display.setText(_("Loading image…"))
         self._img_section.show()
 
         self._img_thread = _ImageThread(image_url, self._client)

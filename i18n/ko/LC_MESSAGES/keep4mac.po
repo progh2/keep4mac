@@ -1,0 +1,102 @@
+# Korean translation for keep4mac
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko\n"
+
+msgid "New Note"
+msgstr "새 노트"
+
+msgid "Sync"
+msgstr "동기화"
+
+msgid "Web Keep"
+msgstr "웹 Keep"
+
+msgid "🚀\nAutostart"
+msgstr "🚀\n자동시작"
+
+msgid "Autostart enabled (click to disable)"
+msgstr "로그인 시 자동 시작 활성화됨 (클릭하여 해제)"
+
+msgid "Start at login (click to enable)"
+msgstr "로그인 시 자동 시작 (클릭하여 설정)"
+
+msgid "About"
+msgstr "정보"
+
+msgid "Logout"
+msgstr "로그아웃"
+
+msgid "Quit"
+msgstr "종료"
+
+msgid "Google Keep Menu Bar App"
+msgstr "Google Keep 메뉴바 앱"
+
+msgid "Sign in with Google Account"
+msgstr "Google 계정으로 로그인"
+
+msgid "Click the button to open a browser.\nSign in with your Google account to connect automatically."
+msgstr "버튼을 누르면 Chrome 창이 열립니다.\nGoogle 계정으로 로그인하면 자동으로 연결됩니다."
+
+msgid "Sign in with Google"
+msgstr "Google로 로그인"
+
+msgid "Opening browser…"
+msgstr "브라우저 열리는 중…"
+
+msgid "🔍  Search…"
+msgstr "🔍  검색…"
+
+msgid "No notes"
+msgstr "노트가 없습니다"
+
+msgid "📌  Pinned"
+msgstr "📌  고정됨"
+
+msgid "Notes"
+msgstr "메모"
+
+msgid "Copy to clipboard"
+msgstr "클립보드에 복사"
+
+msgid "Edit Note"
+msgstr "노트 편집"
+
+msgid "Delete"
+msgstr "삭제"
+
+msgid "Title"
+msgstr "제목"
+
+msgid "Enter note content…"
+msgstr "내용을 입력하세요…"
+
+msgid "🗑  Delete Image"
+msgstr "🗑  이미지 삭제"
+
+msgid "🔗 Links"
+msgstr "🔗 링크"
+
+msgid "Pin / Unpin"
+msgstr "고정 / 해제"
+
+msgid "Save"
+msgstr "저장"
+
+msgid "Loading image…"
+msgstr "이미지 불러오는 중…"
+
+msgid "About keep4mac"
+msgstr "keep4mac 정보"
+
+msgid "Version"
+msgstr "버전"
+
+msgid "Made by"
+msgstr "만든 이"
+
+msgid "Close"
+msgstr "닫기"

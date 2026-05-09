@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QPushButt
 
 from keep4mac.core.models import NoteModel, NoteType
 from keep4mac.core.url_utils import extract_urls, short_url
+from keep4mac.i18n import gettext as _
 
 
 class _ImageThread(QThread):
@@ -93,7 +94,7 @@ class NoteItemWidget(QFrame):
             QPushButton:hover { background: rgba(0,0,0,0.08); }
             QPushButton:pressed { background: rgba(0,0,0,0.14); }
         """)
-        self._copy_btn.setToolTip("클립보드에 복사")
+        self._copy_btn.setToolTip(_("Copy to clipboard"))
         self._copy_btn.clicked.connect(self._copy_to_clipboard)
         self._copy_btn.hide()
         title_row.addWidget(self._copy_btn)

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 )
 
 from keep4mac import __version__
+from keep4mac.i18n import gettext as _
 
 _GITHUB_REPO = "https://github.com/progh2/keep4mac"
 _GITHUB_PROFILE = "https://github.com/progh2"
@@ -13,7 +14,7 @@ _GITHUB_PROFILE = "https://github.com/progh2"
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("keep4mac 정보")
+        self.setWindowTitle(_("About keep4mac"))
         self.setFixedSize(300, 260)
         self.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint
@@ -54,19 +55,19 @@ class AboutDialog(QDialog):
         bl.setSpacing(10)
         bl.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        version_lbl = QLabel(f"버전 {__version__}")
+        version_lbl = QLabel(f"{_('Version')} {__version__}")
         version_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_lbl.setStyleSheet("font-size: 12px; color: #9aa0a6;")
         bl.addWidget(version_lbl)
 
-        desc = QLabel("Google Keep macOS 메뉴바 앱")
+        desc = QLabel(_("Google Keep Menu Bar App"))
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc.setStyleSheet("font-size: 13px; color: #3c4043;")
         bl.addWidget(desc)
 
         bl.addSpacing(4)
 
-        made_by = QLabel("만든 이")
+        made_by = QLabel(_("Made by"))
         made_by.setAlignment(Qt.AlignmentFlag.AlignCenter)
         made_by.setStyleSheet("font-size: 11px; color: #9aa0a6;")
         bl.addWidget(made_by)
@@ -102,7 +103,7 @@ class AboutDialog(QDialog):
         github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(_GITHUB_REPO)))
         btn_row.addWidget(github_btn)
 
-        close_btn = QPushButton("닫기")
+        close_btn = QPushButton(_("Close"))
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         close_btn.setFixedHeight(34)
         close_btn.setStyleSheet("""

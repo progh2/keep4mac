@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 
 from keep4mac.api.keep_client import KeepClient, SyncError
 from keep4mac.core.models import NoteModel
+from keep4mac.i18n import gettext as _
 from keep4mac.ui.note_item_widget import NoteItemWidget
 
 
@@ -27,7 +28,7 @@ class NoteListWidget(QWidget):
 
         # 검색바
         self._search = QLineEdit()
-        self._search.setPlaceholderText("🔍  검색…")
+        self._search.setPlaceholderText(_("🔍  Search…"))
         self._search.textChanged.connect(self._filter)
         self._search.setStyleSheet("""
             QLineEdit {
@@ -94,7 +95,7 @@ class NoteListWidget(QWidget):
                 item.widget().deleteLater()
 
         if not notes:
-            lbl = QLabel("노트가 없습니다")
+            lbl = QLabel(_("No notes"))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setStyleSheet("color: #9aa0a6; font-size: 13px; padding: 40px;")
             self._list_layout.insertWidget(0, lbl)
@@ -105,7 +106,7 @@ class NoteListWidget(QWidget):
         idx = 0
 
         if pinned:
-            self._list_layout.insertWidget(idx, self._section_header("📌  고정됨")); idx += 1
+            self._list_layout.insertWidget(idx, self._section_header(_("📌  Pinned"))); idx += 1
             for note in pinned:
                 w = NoteItemWidget(note, fetch_fn=self._client.fetch_image)
                 w.clicked.connect(self.note_selected)
@@ -113,7 +114,7 @@ class NoteListWidget(QWidget):
 
         if regular:
             if pinned:
-                self._list_layout.insertWidget(idx, self._section_header("메모")); idx += 1
+                self._list_layout.insertWidget(idx, self._section_header(_("Notes"))); idx += 1
             for note in regular:
                 w = NoteItemWidget(note, fetch_fn=self._client.fetch_image)
                 w.clicked.connect(self.note_selected)

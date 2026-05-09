@@ -1,0 +1,102 @@
+# Japanese translation for keep4mac
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+
+msgid "New Note"
+msgstr "新しいメモ"
+
+msgid "Sync"
+msgstr "同期"
+
+msgid "Web Keep"
+msgstr "ウェブ Keep"
+
+msgid "🚀\nAutostart"
+msgstr "🚀\n自動起動"
+
+msgid "Autostart enabled (click to disable)"
+msgstr "ログイン時に自動起動 有効（クリックで無効化）"
+
+msgid "Start at login (click to enable)"
+msgstr "ログイン時に自動起動（クリックで有効化）"
+
+msgid "About"
+msgstr "情報"
+
+msgid "Logout"
+msgstr "ログアウト"
+
+msgid "Quit"
+msgstr "終了"
+
+msgid "Google Keep Menu Bar App"
+msgstr "Google Keep メニューバーアプリ"
+
+msgid "Sign in with Google Account"
+msgstr "Googleアカウントでログイン"
+
+msgid "Click the button to open a browser.\nSign in with your Google account to connect automatically."
+msgstr "ボタンをクリックするとブラウザが開きます。\nGoogleアカウントでログインすると自動的に接続されます。"
+
+msgid "Sign in with Google"
+msgstr "Googleでログイン"
+
+msgid "Opening browser…"
+msgstr "ブラウザを開いています…"
+
+msgid "🔍  Search…"
+msgstr "🔍  検索…"
+
+msgid "No notes"
+msgstr "メモがありません"
+
+msgid "📌  Pinned"
+msgstr "📌  固定済み"
+
+msgid "Notes"
+msgstr "メモ"
+
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
+
+msgid "Edit Note"
+msgstr "メモを編集"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "Title"
+msgstr "タイトル"
+
+msgid "Enter note content…"
+msgstr "メモの内容を入力…"
+
+msgid "🗑  Delete Image"
+msgstr "🗑  画像を削除"
+
+msgid "🔗 Links"
+msgstr "🔗 リンク"
+
+msgid "Pin / Unpin"
+msgstr "ピン留め / 解除"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Loading image…"
+msgstr "画像を読み込んでいます…"
+
+msgid "About keep4mac"
+msgstr "keep4macについて"
+
+msgid "Version"
+msgstr "バージョン"
+
+msgid "Made by"
+msgstr "制作者"
+
+msgid "Close"
+msgstr "閉じる"

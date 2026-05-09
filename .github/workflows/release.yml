@@ -25,6 +25,13 @@ jobs:
           pip install -e .
           pip install "pyinstaller>=6.0" "pyqt6==6.7.1"
 
+      - name: Compile .po → .mo
+        run: |
+          for lang in ko en ja; do
+            msgfmt i18n/${lang}/LC_MESSAGES/keep4mac.po \
+                   -o i18n/${lang}/LC_MESSAGES/keep4mac.mo
+          done
+
       - name: Build DMG
         run: bash build_dmg.sh
 
