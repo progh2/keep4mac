@@ -29,21 +29,13 @@ keep4mac은 **Playwright Chromium**을 사용해 Google 계정에 로그인합�
 
 1. [Releases](../../releases) 에서 `keep4mac-x.x.x.dmg` 다운로드
 2. DMG를 열고 `keep4mac.app`을 Applications 폴더로 드래그
-3. **최초 실행 시 보안 경고 해결** (셋 중 하나)
+3. **보안 경고 없이 설치하려면 PKG 인스톨러 사용 (권장)**
+   - DMG 안의 **`keep4mac 설치하기.pkg`** 더블클릭
+   - 경고 창이 뜨면: pkg 파일 **우클릭 → 열기 → 열기** 클릭
+   - 설치 마법사 진행 → 설치 완료 후 바로 실행 가능
 
-   **방법 1 — 설치 도우미 (가장 쉬움)**
-   - DMG 창에서 **`처음 실행하기.command`** 더블클릭
-   - 확인 창에서 **"열기"** 클릭
-   - Terminal이 자동으로 보안 설정 해제 후 앱을 실행합니다
-
-   **방법 2 — 우클릭으로 열기**
-   - Applications에서 keep4mac 앱을 **우클릭 → 열기(Open)** 선택
-   - 경고 창에서 **"열기"** 클릭 (최초 1회만)
-
-   **방법 3 — 터미널 명령어**
-   ```bash
-   xattr -cr /Applications/keep4mac.app
-   ```
+   **또는 직접 드래그 설치 후 최초 실행 시**
+   - Applications에서 keep4mac 앱 **우클릭 → 열기 → 열기** 클릭 (1회만)
 
 ## 개발 환경 실행
 
