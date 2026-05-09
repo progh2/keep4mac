@@ -30,12 +30,12 @@ class NoteItemWidget(QFrame):
             pin_label.setStyleSheet("font-size: 11px;")
             title_row.addWidget(pin_label)
 
-        title_text = note.title if note.title else "(제목 없음)"
-        title_label = QLabel(title_text)
-        title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
-        title_label.setMaximumWidth(270)
-        title_row.addWidget(title_label, 1)
-        layout.addLayout(title_row)
+        if note.title or note.pinned:
+            title_label = QLabel(note.title)
+            title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
+            title_label.setMaximumWidth(270)
+            title_row.addWidget(title_label, 1)
+            layout.addLayout(title_row)
 
         # 미리보기
         preview = note.preview
