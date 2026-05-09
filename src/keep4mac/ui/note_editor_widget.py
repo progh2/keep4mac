@@ -40,6 +40,7 @@ class NoteEditorWidget(QWidget):
         self._client = client
         self._note_id: str | None = None
         self._is_new = False
+        self._is_pinned = False
         self._image_url: str | None = None
         self._current_color = NoteColor.DEFAULT
         self._color_btns: dict[NoteColor, QPushButton] = {}
@@ -213,8 +214,18 @@ class NoteEditorWidget(QWidget):
             palette_col.addLayout(row_layout)
 
         fl.addLayout(palette_col)
+
+        # 핀 고정 토글 버튼
+        self._pin_btn = QPushButton("📌")
+        self._pin_btn.setFixedSize(32, 32)
+        self._pin_btn.setCheckable(True)
+        self._pin_btn.setToolTip("고정 / 해제")
+        self._pin_btn.clicked.connect(self._on_pin_toggle)
+        fl.addWidget(self._pin_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         fl.addStretch()
         self._refresh_palette()
+        self._refresh_pin_btn()
 
         save_btn = QPushButton("저장")
         save_btn.setMinimumWidth(80)
@@ -249,6 +260,7 @@ class NoteEditorWidget(QWidget):
         self._note_id = None
         self._is_new = True
         self._image_url = None
+        self._is_pinned = False
         self._header_label.setText("새 노트")
         self._delete_btn.hide()
         self._title_edit.clear()
@@ -259,14 +271,17 @@ class NoteEditorWidget(QWidget):
         self._img_section.hide()
         self._links_section.hide()
         self._set_color(NoteColor.DEFAULT)
+        self._refresh_pin_btn()
         self._title_edit.setFocus()
 
     # ── 내부 ──────────────────────────────────────────────────
 
     def _populate(self, note: NoteModel):
         self._image_url = note.image_url
+        self._is_pinned = note.pinned
         self._title_edit.setText(note.title)
         self._set_color(note.color)
+        self._refresh_pin_btn()
 
         if note.note_type == NoteType.LIST:
             self._body_edit.hide()
@@ -359,6 +374,34 @@ class NoteEditorWidget(QWidget):
     def _on_back(self):
         self.back_requested.emit()
 
+    def _on_pin_toggle(self):
+        if self._is_new:
+            # 새 노트는 저장 시 반영 — 버튼 상태만 업데이트
+            self._is_pinned = not self._is_pinned
+        else:
+            # 기존 노트는 즉시 저장
+            self._is_pinned = self._client.toggle_pin(self._note_id)
+        self._refresh_pin_btn()
+
+    def _refresh_pin_btn(self):
+        self._pin_btn.setChecked(self._is_pinned)
+        if self._is_pinned:
+            self._pin_btn.setStyleSheet("""
+                QPushButton {
+                    background: #e8f0fe; border: 1.5px solid #1a73e8;
+                    border-radius: 8px; font-size: 15px;
+                }
+                QPushButton:hover { background: #d2e3fc; }
+            """)
+        else:
+            self._pin_btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent; border: 1px solid #dadce0;
+                    border-radius: 8px; font-size: 15px; color: #9aa0a6;
+                }
+                QPushButton:hover { background: #f1f3f4; border-color: #9aa0a6; }
+            """)
+
     def _on_color_pick(self, color: NoteColor):
         self._set_color(color)
 
@@ -398,7 +441,7 @@ class NoteEditorWidget(QWidget):
         title = self._title_edit.text().strip()
         color = self._current_color
         if self._is_new:
-            self._client.create_note(title, self._body_edit.toPlainText(), color)
+            self._client.create_note(title, self._body_edit.toPlainText(), color, self._is_pinned)
         elif self._note_id:
             if self._list_scroll.isVisible():
                 items = [(text, cb.isChecked()) for cb, text in self._checklist_rows]

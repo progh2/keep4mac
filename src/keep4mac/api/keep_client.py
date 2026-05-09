@@ -289,11 +289,21 @@ class KeepClient:
 
     # ── 노트 수정 ───────────────────────────────────────────────
 
-    def create_note(self, title: str, text: str, color: NoteColor = NoteColor.DEFAULT) -> NoteModel:
+    def create_note(self, title: str, text: str, color: NoteColor = NoteColor.DEFAULT, pinned: bool = False) -> NoteModel:
         note = self._keep.createNote(title, text)
         note.color = gkeepapi.node.ColorValue(color.value)
+        note.pinned = pinned
         self._keep.sync()
         return _to_model(note)
+
+    def toggle_pin(self, note_id: str) -> bool:
+        """핀 상태를 토글하고 새 상태를 반환한다."""
+        note = self._keep.get(note_id)
+        if not note:
+            return False
+        note.pinned = not note.pinned
+        self._keep.sync()
+        return note.pinned
 
     def update_note(self, note_id: str, title: str, text: str, color: NoteColor | None = None) -> None:
         note = self._keep.get(note_id)
