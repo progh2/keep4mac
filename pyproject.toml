@@ -12,6 +12,7 @@ dependencies = [
     "PyQt6>=6.6.0",
     "keyring>=24.0.0",
     "requests>=2.31.0",
+    "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
 ]
 
 [project.scripts]
