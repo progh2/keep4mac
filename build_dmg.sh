@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.5"
+VERSION="0.1.6"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -66,6 +66,8 @@ echo "  마운트: $MOUNT_DIR"
 ditto "$APP_PATH" "$MOUNT_DIR/keep4mac.app"
 ln -s /Applications "$MOUNT_DIR/Applications"
 cp "docs/install_guide.txt" "$MOUNT_DIR/꼭 읽어주세요.txt"
+cp "docs/setup.command" "$MOUNT_DIR/처음 실행하기.command"
+chmod +x "$MOUNT_DIR/처음 실행하기.command"
 
 # 마운트 해제
 hdiutil detach "$MOUNT_DIR" -quiet
