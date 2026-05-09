@@ -18,8 +18,8 @@ class MainPanel(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint,
         )
         self._client = client
-        self.setFixedWidth(320)
-        self.setMinimumHeight(480)
+        self.setFixedWidth(340)
+        self.setFixedHeight(580)
         self._build_ui()
         self.setStyleSheet("""
             QWidget#MainPanel {
