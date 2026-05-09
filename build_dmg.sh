@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.1"
+VERSION="0.1.2"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -21,7 +21,7 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 
 echo "▶ Qt 플러그인 교체 (pip PyQt6)..."
-PYQT6_PLUGINS="/opt/anaconda3/lib/python3.13/site-packages/PyQt6/Qt6/plugins"
+PYQT6_PLUGINS=$(python3 -c "import PyQt6, os; print(os.path.join(os.path.dirname(PyQt6.__file__), 'Qt6', 'plugins'))")
 BUNDLE_PLUGINS="${APP_PATH}/Contents/Frameworks/PyQt6/Qt6/plugins"
 for plugin_dir in platforms styles imageformats; do
     if [ -d "${PYQT6_PLUGINS}/${plugin_dir}" ]; then
