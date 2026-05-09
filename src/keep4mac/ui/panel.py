@@ -29,7 +29,7 @@ class MainPanel(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._client = client
         self._quit_callback = quit_callback
-        self.setFixedSize(380, 580)
+        self.setFixedSize(420, 580)
         self._build_ui()
         # 배경/테두리는 paintEvent + CALayer가 담당
         self.setStyleSheet("QWidget#MainPanel { background: transparent; }")
