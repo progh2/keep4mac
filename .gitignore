@@ -5,3 +5,24 @@ __pycache__/
 *.log
 node_modules/
 .claude/
+
+# Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+pip-wheel-metadata/
+
+# py2app
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# 인증 정보 (절대 커밋 금지)
+*.keystore
+credentials.json
