@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.4"
+VERSION="0.1.5"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -62,9 +62,10 @@ mkdir -p "$MOUNT_DIR"
 hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
 echo "  마운트: $MOUNT_DIR"
 
-# .app 복사 + Applications 심볼릭 링크
+# .app 복사 + Applications 심볼릭 링크 + 설치 안내
 ditto "$APP_PATH" "$MOUNT_DIR/keep4mac.app"
 ln -s /Applications "$MOUNT_DIR/Applications"
+cp "docs/install_guide.txt" "$MOUNT_DIR/꼭 읽어주세요.txt"
 
 # 마운트 해제
 hdiutil detach "$MOUNT_DIR" -quiet
