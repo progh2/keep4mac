@@ -5,18 +5,18 @@ _BTN_CSS = """
     QPushButton {{
         background: transparent;
         border: none;
-        color: #5f6368;
+        color: #9aa0a6;
         font-size: 10px;
         padding: 4px 2px;
+        border-radius: 6px;
     }}
     QPushButton:hover {{
-        background: #e0e0e0;
-        border-radius: 8px;
-        color: #202124;
+        background: #f1f3f4;
+        color: #3c4043;
     }}
     QPushButton:pressed {{
-        background: #d0d0d0;
-        border-radius: 8px;
+        background: #e8eaed;
+        color: #202124;
     }}
 """
 
@@ -30,13 +30,13 @@ class SidebarWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setFixedWidth(60)
-        self.setStyleSheet("background: #f1f3f4; border-right: 1px solid #e0e0e0;")
+        self.setFixedWidth(56)
+        self.setStyleSheet("background: transparent;")
         self._build_ui()
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 12, 0, 12)
+        layout.setContentsMargins(0, 14, 0, 14)
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
@@ -57,7 +57,7 @@ class SidebarWidget(QWidget):
 
     def _make_btn(self, icon: str, label: str, signal) -> QPushButton:
         btn = QPushButton(f"{icon}\n{label}")
-        btn.setFixedSize(56, 52)
+        btn.setFixedSize(52, 50)
         btn.setStyleSheet(_BTN_CSS)
         btn.clicked.connect(lambda: signal.emit())
         return btn
