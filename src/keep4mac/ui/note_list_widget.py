@@ -47,8 +47,10 @@ class NoteListWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: #ffffff; }")
 
         self._list_body = QWidget()
+        self._list_body.setAutoFillBackground(True)
         self._list_body.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._list_layout = QVBoxLayout(self._list_body)
         self._list_layout.setContentsMargins(0, 0, 4, 0)
