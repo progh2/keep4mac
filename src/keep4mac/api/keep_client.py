@@ -1,7 +1,9 @@
 import logging
+import uuid
 from typing import Optional
 
 import gkeepapi
+import gpsoauth
 import keyring
 
 from keep4mac.core.models import ChecklistItem, NoteColor, NoteModel, NoteType
@@ -67,19 +69,36 @@ class KeepClient:
     # ── 인증 ──────────────────────────────────────────────────
 
     def login(self, email: str, password: str) -> None:
-        """앱 비밀번호로 최초 로그인. 성공 시 토큰을 Keychain에 저장."""
+        """앱 비밀번호로 최초 로그인. gpsoauth로 마스터 토큰을 받아 Keychain에 저장."""
+        device_id = f"{uuid.getnode():x}"
+
         try:
-            self._keep.login(email, password)
+            res = gpsoauth.perform_master_login(email, password, device_id)
         except Exception as e:
-            raise AuthError(f"로그인 실패: {e}") from e
+            raise AuthError(f"네트워크 오류: {e}") from e
+
+        if res.get("Error") == "NeedsBrowser":
+            raise AuthError(
+                "브라우저 인증이 필요합니다.\n"
+                "Google 계정 보안 설정에서 앱 비밀번호를 사용하거나\n"
+                "2단계 인증을 활성화해주세요."
+            )
+
+        if "Token" not in res:
+            raise AuthError(f"로그인 실패: {res.get('Error', '알 수 없는 오류')}")
+
+        master_token = res["Token"]
+
+        try:
+            self._keep.authenticate(email, master_token, sync=False)
+        except Exception as e:
+            raise AuthError(f"Keep 인증 실패: {e}") from e
 
         self._email = email
         self._logged_in = True
-        token = self._keep.getMasterToken()
-        keyring.set_password(_SERVICE, _KEY_TOKEN, token)
+        keyring.set_password(_SERVICE, _KEY_TOKEN, master_token)
         keyring.set_password(_SERVICE, _KEY_EMAIL, email)
-        keyring.set_password(_SERVICE, _KEY_AUTH, "password")
-        logger.info("로그인 성공, 토큰 저장 완료")
+        logger.info("로그인 성공, 마스터 토큰 저장 완료")
 
     def resume(self) -> bool:
         """Keychain에 저장된 마스터 토큰으로 재인증."""
@@ -88,7 +107,7 @@ class KeepClient:
         if not email or not token:
             return False
         try:
-            self._keep.resume(email, token)
+            self._keep.authenticate(email, token, sync=False)
         except Exception as e:
             logger.warning("마스터 토큰 복원 실패: %s", e)
             return False

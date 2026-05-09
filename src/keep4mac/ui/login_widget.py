@@ -25,136 +25,121 @@ class LoginWidget(QWidget):
         self._build_ui()
 
     def _build_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 32, 24, 24)
-        layout.setSpacing(14)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        # 타이틀
-        title = QLabel("keep4mac")
+        # ── 헤더 영역 ──────────────────────────────────────────
+        header = QWidget()
+        header.setFixedHeight(100)
+        header.setStyleSheet("background: #1a73e8; border-radius: 0px;")
+        h_layout = QVBoxLayout(header)
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.setSpacing(4)
+        h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        title = QLabel("🗒  keep4mac")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #202124;")
-        layout.addWidget(title)
+        title.setStyleSheet("font-size: 22px; font-weight: bold; color: white; background: transparent;")
+        h_layout.addWidget(title)
 
-        sub = QLabel("Google Keep 메뉴바 앱")
-        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sub.setStyleSheet("font-size: 12px; color: #5f6368;")
-        layout.addWidget(sub)
+        subtitle = QLabel("Google Keep 메뉴바 앱")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setStyleSheet("font-size: 12px; color: rgba(255,255,255,0.8); background: transparent;")
+        h_layout.addWidget(subtitle)
 
-        layout.addSpacing(8)
+        root.addWidget(header)
 
-        # ── 이메일 입력 ──────────────────────────────────────
-        layout.addWidget(self._field_label("Google 계정 이메일"))
-        self._email = QLineEdit()
-        self._email.setPlaceholderText("example@gmail.com")
-        self._email.setStyleSheet(self._input_css())
-        self._email.textChanged.connect(self._update_open_btn)
-        layout.addWidget(self._email)
+        # ── 본문 영역 ──────────────────────────────────────────
+        body = QWidget()
+        body.setStyleSheet("background: #ffffff;")
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(20, 20, 20, 20)
+        body_layout.setSpacing(12)
 
-        # ── 앱 비밀번호 만들기 박스 ──────────────────────────
-        step1_box = QFrame()
-        step1_box.setStyleSheet("""
-            QFrame {
-                background: #f8f9fa;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-            }
-        """)
-        box_layout = QVBoxLayout(step1_box)
-        box_layout.setContentsMargins(14, 12, 14, 12)
-        box_layout.setSpacing(6)
+        # 이메일
+        body_layout.addWidget(self._label("Google 계정 이메일"))
+        self._email = self._input("example@gmail.com")
+        self._email.textChanged.connect(self._update_step1_btn)
+        body_layout.addWidget(self._email)
 
-        step1_title = QLabel("① 앱 비밀번호 만들기")
-        step1_title.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
-        box_layout.addWidget(step1_title)
+        # STEP 1 카드
+        card1 = self._make_card(
+            step="1",
+            title="앱 비밀번호 발급",
+            desc="Google에서 이 앱 전용 비밀번호를\n발급받아 사용합니다.",
+        )
+        self._step1_btn = QPushButton("앱 비밀번호 페이지 열기  →")
+        self._step1_btn.setEnabled(False)
+        self._step1_btn.setMinimumHeight(40)
+        self._step1_btn.setStyleSheet(self._primary_btn_css(disabled=True))
+        self._step1_btn.clicked.connect(self._open_step1)
+        card1.layout().addWidget(self._step1_btn)
+        body_layout.addWidget(card1)
 
-        step1_desc = QLabel("Google이 이메일 대신 앱용 16자리\n비밀번호를 생성해줍니다.")
-        step1_desc.setStyleSheet("font-size: 11px; color: #5f6368; background: transparent;")
-        box_layout.addWidget(step1_desc)
-
-        self._open_btn = QPushButton("Google 앱 비밀번호 페이지 열기  →")
-        self._open_btn.setStyleSheet("""
-            QPushButton {
-                background: #1a73e8; color: white;
-                border: none; border-radius: 6px;
-                padding: 8px 12px; font-size: 12px;
-                text-align: left;
-            }
-            QPushButton:hover { background: #1557b0; }
-            QPushButton:disabled { background: #a0c3ff; }
-        """)
-        self._open_btn.setEnabled(False)
-        self._open_btn.clicked.connect(self._open_app_password_page)
-        box_layout.addWidget(self._open_btn)
-
-        layout.addWidget(step1_box)
-
-        # ── 앱 비밀번호 입력 ─────────────────────────────────
-        layout.addWidget(self._field_label("② 앱 비밀번호 붙여넣기"))
-        self._password = QLineEdit()
-        self._password.setPlaceholderText("xxxx xxxx xxxx xxxx")
-        self._password.setEchoMode(QLineEdit.EchoMode.Password)
-        self._password.setStyleSheet(self._input_css())
+        # STEP 2 카드
+        card2 = self._make_card(
+            step="2",
+            title="앱 비밀번호 입력",
+            desc="발급받은 16자리 비밀번호를 입력하세요.",
+        )
+        self._password = self._input("xxxx xxxx xxxx xxxx", password=True)
         self._password.returnPressed.connect(self._do_login)
-        layout.addWidget(self._password)
+        card2.layout().addWidget(self._password)
+        body_layout.addWidget(card2)
 
-        # ── 오류 메시지 ──────────────────────────────────────
+        # 오류 메시지
         self._error = QLabel()
-        self._error.setStyleSheet("font-size: 12px; color: #ea4335;")
         self._error.setWordWrap(True)
+        self._error.setStyleSheet(
+            "font-size: 12px; color: #ea4335; "
+            "background: #fce8e6; border-radius: 6px; padding: 8px 10px;"
+        )
         self._error.hide()
-        layout.addWidget(self._error)
+        body_layout.addWidget(self._error)
 
-        # ── 로그인 버튼 ──────────────────────────────────────
+        # 로그인 버튼
         self._login_btn = QPushButton("로그인")
-        self._login_btn.setStyleSheet("""
-            QPushButton {
-                background: #1a73e8; color: white;
-                border: none; border-radius: 6px;
-                padding: 10px; font-size: 14px; font-weight: 500;
-            }
-            QPushButton:hover { background: #1557b0; }
-            QPushButton:disabled { background: #a0c3ff; }
-        """)
+        self._login_btn.setMinimumHeight(46)
+        self._login_btn.setStyleSheet(self._primary_btn_css())
         self._login_btn.clicked.connect(self._do_login)
-        layout.addWidget(self._login_btn)
+        body_layout.addWidget(self._login_btn)
 
-        # ── 2단계 인증 안내 ──────────────────────────────────
-        note_layout = QHBoxLayout()
-        note_layout.setContentsMargins(0, 0, 0, 0)
-        note_icon = QLabel("ℹ️")
-        note_icon.setFixedWidth(20)
-        note_text = QLabel("앱 비밀번호는 Google 2단계 인증이 필요합니다.")
-        note_text.setStyleSheet("font-size: 11px; color: #9aa0a6;")
+        # 2단계 인증 안내
+        note = QHBoxLayout()
+        note.setSpacing(4)
+        note_txt = QLabel("앱 비밀번호는 Google 2단계 인증이 필요합니다.")
+        note_txt.setStyleSheet("font-size: 11px; color: #9aa0a6;")
         note_link = QPushButton("설정하기 →")
-        note_link.setStyleSheet("""
-            QPushButton {
-                background: transparent; color: #1a73e8;
-                border: none; font-size: 11px; padding: 0;
-            }
-            QPushButton:hover { color: #1557b0; }
-        """)
+        note_link.setFlat(True)
+        note_link.setCursor(Qt.CursorShape.PointingHandCursor)
+        note_link.setStyleSheet(
+            "font-size: 11px; color: #1a73e8; border: none; "
+            "background: transparent; padding: 0;"
+        )
         note_link.clicked.connect(lambda: _open_url(_2FA_URL))
-        note_layout.addWidget(note_icon)
-        note_layout.addWidget(note_text)
-        note_layout.addWidget(note_link)
-        note_layout.addStretch()
-        layout.addLayout(note_layout)
+        note.addWidget(note_txt)
+        note.addWidget(note_link)
+        note.addStretch()
+        body_layout.addLayout(note)
 
-        layout.addStretch()
+        body_layout.addStretch()
+        root.addWidget(body)
 
-    # ── 이벤트 ───────────────────────────────────────────────
+    # ── 이벤트 ────────────────────────────────────────────────
 
-    def _update_open_btn(self, email: str):
-        self._open_btn.setEnabled(bool(email.strip()))
+    def _update_step1_btn(self, email: str):
+        ok = bool(email.strip())
+        self._step1_btn.setEnabled(ok)
+        self._step1_btn.setStyleSheet(self._primary_btn_css(disabled=not ok))
 
-    def _open_app_password_page(self):
-        """이메일 입력 후 Google 앱 비밀번호 페이지를 브라우저로 열기."""
+    def _open_step1(self):
         _open_url(_APP_PASSWORD_URL)
         self._password.setFocus()
 
     def _do_login(self):
         email = self._email.text().strip()
-        pw = self._password.text().replace(" ", "").strip()  # 공백 자동 제거
+        pw = self._password.text().replace(" ", "").strip()
 
         if not email:
             self._show_error("Google 계정 이메일을 입력해주세요.")
@@ -176,22 +161,97 @@ class LoginWidget(QWidget):
             self._login_btn.setEnabled(True)
             self._login_btn.setText("로그인")
 
-    # ── 헬퍼 ─────────────────────────────────────────────────
-
     def _show_error(self, msg: str):
         self._error.setText(msg)
         self._error.show()
 
-    def _field_label(self, text: str) -> QLabel:
+    # ── 위젯 헬퍼 ────────────────────────────────────────────
+
+    def _label(self, text: str) -> QLabel:
         lbl = QLabel(text)
         lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #3c4043;")
         return lbl
 
-    def _input_css(self) -> str:
-        return """
+    def _input(self, placeholder: str, password: bool = False) -> QLineEdit:
+        w = QLineEdit()
+        w.setPlaceholderText(placeholder)
+        w.setMinimumHeight(40)
+        if password:
+            w.setEchoMode(QLineEdit.EchoMode.Password)
+        w.setStyleSheet("""
             QLineEdit {
-                border: 1px solid #dadce0; border-radius: 6px;
-                padding: 9px 12px; font-size: 13px;
+                border: 1.5px solid #dadce0;
+                border-radius: 8px;
+                padding: 0 12px;
+                font-size: 13px;
+                color: #202124;
             }
-            QLineEdit:focus { border-color: #1a73e8; outline: none; }
+            QLineEdit:focus {
+                border-color: #1a73e8;
+            }
+        """)
+        return w
+
+    def _make_card(self, step: str, title: str, desc: str) -> QFrame:
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background: #f8f9fa;
+                border: 1px solid #e8eaed;
+                border-radius: 10px;
+            }
+        """)
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(14, 12, 14, 14)
+        layout.setSpacing(8)
+
+        # 스텝 배지 + 제목
+        header_row = QHBoxLayout()
+        header_row.setSpacing(8)
+
+        badge = QLabel(step)
+        badge.setFixedSize(22, 22)
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge.setStyleSheet("""
+            background: #1a73e8; color: white;
+            border-radius: 11px;
+            font-size: 11px; font-weight: bold;
+        """)
+
+        title_lbl = QLabel(title)
+        title_lbl.setStyleSheet(
+            "font-size: 13px; font-weight: 600; color: #202124; background: transparent;"
+        )
+
+        header_row.addWidget(badge)
+        header_row.addWidget(title_lbl)
+        header_row.addStretch()
+        layout.addLayout(header_row)
+
+        desc_lbl = QLabel(desc)
+        desc_lbl.setStyleSheet(
+            "font-size: 11px; color: #5f6368; background: transparent;"
+        )
+        layout.addWidget(desc_lbl)
+
+        return card
+
+    def _primary_btn_css(self, disabled: bool = False) -> str:
+        if disabled:
+            return """
+                QPushButton {
+                    background: #e8eaed; color: #9aa0a6;
+                    border: none; border-radius: 8px;
+                    font-size: 13px; font-weight: 500;
+                }
+            """
+        return """
+            QPushButton {
+                background: #1a73e8; color: white;
+                border: none; border-radius: 8px;
+                font-size: 13px; font-weight: 500;
+            }
+            QPushButton:hover { background: #1557b0; }
+            QPushButton:pressed { background: #0d47a1; }
+            QPushButton:disabled { background: #e8eaed; color: #9aa0a6; }
         """

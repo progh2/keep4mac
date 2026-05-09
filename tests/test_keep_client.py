@@ -27,19 +27,22 @@ def client():
 
 class TestLogin:
     def test_login_success_saves_token(self, client):
+        mock_gpsoauth = {"Token": "master-tok-123"}
         with (
-            patch.object(client._keep, "login"),
-            patch.object(client._keep, "getMasterToken", return_value="tok123"),
+            patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
+                  return_value=mock_gpsoauth),
+            patch.object(client._keep, "authenticate"),
             patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
         ):
             client.login("user@gmail.com", "app-password")
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
-        mock_set.assert_any_call("keep4mac", "master_token", "tok123")
+        mock_set.assert_any_call("keep4mac", "master_token", "master-tok-123")
 
     def test_login_failure_raises_auth_error(self, client):
-        with patch.object(client._keep, "login", side_effect=Exception("bad creds")):
+        with patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
+                   return_value={"Error": "BadAuthentication"}):
             with pytest.raises(AuthError):
                 client.login("user@gmail.com", "wrong")
 
@@ -48,11 +51,10 @@ class TestLogin:
 
 class TestResume:
     def test_resume_success(self, client):
-        # 호출 순서: auth_method → email → master_token
         with (
             patch("keep4mac.api.keep_client.keyring.get_password",
-                  side_effect=["password", "user@gmail.com", "tok123"]),
-            patch.object(client._keep, "resume"),
+                  side_effect=["user@gmail.com", "tok123"]),
+            patch.object(client._keep, "authenticate"),
         ):
             result = client.resume()
 
