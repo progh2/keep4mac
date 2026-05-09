@@ -79,6 +79,8 @@ class NoteItemWidget(QFrame):
             title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
             title_label.setWordWrap(True)
             title_row.addWidget(title_label, 1)
+        else:
+            title_row.addStretch(1)
 
         self._copy_btn = QPushButton("📋")
         self._copy_btn.setFixedSize(22, 22)
