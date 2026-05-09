@@ -1,17 +1,66 @@
+import hashlib
+import json
 import logging
+import time
+from pathlib import Path
 from typing import Optional
 from uuid import getnode as get_mac
 
 import gkeepapi
 import keyring
+import requests as req_lib
 
 from keep4mac.core.models import ChecklistItem, NoteColor, NoteModel, NoteType
 
 logger = logging.getLogger(__name__)
 
 _SERVICE = "keep4mac"
-_KEY_TOKEN = "oauth_token"
+_KEY_SAPISID = "sapisid"
 _KEY_EMAIL = "email"
+_COOKIES_PATH = Path.home() / ".config" / "keep4mac" / "session.json"
+
+
+# ── SAPISIDHASH 인증 ────────────────────────────────────────────
+
+
+def _sapisidhash(sapisid: str) -> str:
+    """SAPISID 쿠키로 SAPISIDHASH Authorization 헤더 값을 생성한다."""
+    ts = int(time.time())
+    data = f"{ts} {sapisid} https://keep.google.com"
+    h = hashlib.sha1(data.encode()).hexdigest()
+    return f"SAPISIDHASH {ts}_{h}"
+
+
+class _SAPIAuth(req_lib.auth.AuthBase):
+    """requests.Session에 주입하는 SAPISIDHASH 인증 객체."""
+
+    def __init__(self, sapisid: str):
+        self._sapisid = sapisid
+
+    def __call__(self, r):
+        r.headers["Authorization"] = _sapisidhash(self._sapisid)
+        r.headers["X-Goog-AuthUser"] = "0"
+        return r
+
+
+# ── 쿠키 저장/로드 ────────────────────────────────────────────
+
+
+def _save_cookies(cookies: dict) -> None:
+    _COOKIES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _COOKIES_PATH.write_text(json.dumps(cookies))
+
+
+def _load_cookies() -> dict:
+    if not _COOKIES_PATH.exists():
+        return {}
+    try:
+        return json.loads(_COOKIES_PATH.read_text())
+    except Exception:
+        return {}
+
+
+# ── 노트 변환 ──────────────────────────────────────────────────
 
 
 def _parse_color(color) -> NoteColor:
@@ -50,12 +99,18 @@ def _to_model(note) -> NoteModel:
     )
 
 
+# ── 예외 ───────────────────────────────────────────────────────
+
+
 class AuthError(Exception):
     pass
 
 
 class SyncError(Exception):
     pass
+
+
+# ── KeepClient ─────────────────────────────────────────────────
 
 
 class KeepClient:
@@ -66,53 +121,72 @@ class KeepClient:
 
     # ── 인증 ──────────────────────────────────────────────────
 
-    def login_with_browser(self, email: str, oauth_token: str) -> None:
-        """브라우저에서 캡처한 OAuth 토큰으로 gkeepapi 인증."""
+    def login_with_browser(self, email: str, sapisid: str, cookies: dict) -> None:
+        """브라우저에서 추출한 SAPISID/쿠키로 gkeepapi 세션을 인증한다."""
+        self._inject_auth(sapisid, cookies)
+
         try:
-            auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
-            auth._email = email or "unknown@gmail.com"
-            auth._device_id = f"{get_mac():x}"
-            auth._auth_token = oauth_token
-            self._keep.load(auth, sync=True)
+            # load()로 gkeepapi 내부 상태 초기화 후 sync()로 노트 가져오기
+            dummy_auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
+            dummy_auth._email = email or "user@gmail.com"
+            dummy_auth._device_id = f"{get_mac():x}"
+            dummy_auth._auth_token = "dummy"
+            self._keep.load(dummy_auth, sync=False)
+            self._keep.sync()
         except Exception as e:
             raise AuthError(f"Keep 동기화 실패: {e}") from e
 
         self._email = email
         self._logged_in = True
-        keyring.set_password(_SERVICE, _KEY_TOKEN, oauth_token)
-        if email:
-            keyring.set_password(_SERVICE, _KEY_EMAIL, email)
-        logger.info("브라우저 로그인 성공")
+        keyring.set_password(_SERVICE, _KEY_SAPISID, sapisid)
+        keyring.set_password(_SERVICE, _KEY_EMAIL, email or "")
+        _save_cookies(cookies)
+        logger.info("브라우저 로그인 성공 (email=%s)", email)
 
     def resume(self) -> bool:
-        """Keychain에 저장된 OAuth 토큰으로 재인증."""
+        """저장된 SAPISID/쿠키로 재인증을 시도한다."""
         email = keyring.get_password(_SERVICE, _KEY_EMAIL)
-        token = keyring.get_password(_SERVICE, _KEY_TOKEN)
-        if not token:
+        sapisid = keyring.get_password(_SERVICE, _KEY_SAPISID)
+        cookies = _load_cookies()
+
+        if not sapisid or not cookies:
             return False
+
+        self._inject_auth(sapisid, cookies)
+
         try:
-            auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
-            auth._email = email or "unknown@gmail.com"
-            auth._device_id = f"{get_mac():x}"
-            auth._auth_token = token
-            self._keep.load(auth, sync=False)
+            dummy_auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
+            dummy_auth._email = email or "user@gmail.com"
+            dummy_auth._device_id = f"{get_mac():x}"
+            dummy_auth._auth_token = "dummy"
+            self._keep.load(dummy_auth, sync=False)
         except Exception as e:
-            logger.warning("저장된 토큰 복원 실패: %s", e)
+            logger.warning("재인증 실패: %s", e)
             return False
+
         self._email = email
         self._logged_in = True
-        logger.info("저장된 토큰으로 재인증 성공")
+        logger.info("저장된 세션으로 재인증 성공")
         return True
 
     def logout(self) -> None:
-        """로그아웃 및 Keychain 인증 정보 삭제."""
-        for key in (_KEY_TOKEN, _KEY_EMAIL):
+        """로그아웃 및 저장된 인증 정보 삭제."""
+        for key in (_KEY_SAPISID, _KEY_EMAIL):
             try:
                 keyring.delete_password(_SERVICE, key)
             except keyring.errors.PasswordDeleteError:
                 pass
+        if _COOKIES_PATH.exists():
+            _COOKIES_PATH.unlink()
         self._logged_in = False
         self._email = None
+
+    def _inject_auth(self, sapisid: str, cookies: dict) -> None:
+        """gkeepapi의 requests.Session에 SAPISIDHASH 인증과 쿠키를 주입한다."""
+        sapi_auth = _SAPIAuth(sapisid)
+        for api_obj in [self._keep._keep_api, self._keep._reminders_api]:
+            api_obj._session.auth = sapi_auth
+            api_obj._session.cookies.update(cookies)
 
     @property
     def is_logged_in(self) -> bool:
@@ -125,7 +199,6 @@ class KeepClient:
     # ── 동기화 ─────────────────────────────────────────────────
 
     def sync(self) -> None:
-        """Keep 서버와 동기화."""
         if not self._logged_in:
             raise AuthError("로그인 필요")
         try:
@@ -136,7 +209,6 @@ class KeepClient:
     # ── 노트 조회 ───────────────────────────────────────────────
 
     def get_notes(self) -> list[NoteModel]:
-        """활성 노트 목록 반환. 핀 고정 노트가 앞에 옴."""
         notes = [
             _to_model(n)
             for n in self._keep.all()

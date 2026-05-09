@@ -26,21 +26,27 @@ def client():
 
 
 class TestLoginWithBrowser:
-    def test_login_success_saves_token(self, client):
+    def test_login_success_saves_credentials(self, client):
         with (
             patch.object(client._keep, "load"),
+            patch.object(client._keep, "sync"),
             patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
+            patch("keep4mac.api.keep_client._save_cookies") as mock_save,
         ):
-            client.login_with_browser("user@gmail.com", "oauth-token-abc")
+            client.login_with_browser("user@gmail.com", "sapisid-abc", {"SID": "x"})
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
-        mock_set.assert_any_call("keep4mac", "oauth_token", "oauth-token-abc")
+        mock_set.assert_any_call("keep4mac", "sapisid", "sapisid-abc")
+        mock_save.assert_called_once_with({"SID": "x"})
 
     def test_login_failure_raises_auth_error(self, client):
-        with patch.object(client._keep, "load", side_effect=Exception("sync error")):
+        with (
+            patch.object(client._keep, "load"),
+            patch.object(client._keep, "sync", side_effect=Exception("sync error")),
+        ):
             with pytest.raises(AuthError):
-                client.login_with_browser("user@gmail.com", "bad-token")
+                client.login_with_browser("user@gmail.com", "sapisid-abc", {})
 
         assert not client.is_logged_in
 
@@ -49,7 +55,9 @@ class TestResume:
     def test_resume_success(self, client):
         with (
             patch("keep4mac.api.keep_client.keyring.get_password",
-                  side_effect=["user@gmail.com", "saved-token"]),
+                  side_effect=["user@gmail.com", "sapisid-abc"]),
+            patch("keep4mac.api.keep_client._load_cookies",
+                  return_value={"SID": "x"}),
             patch.object(client._keep, "load"),
         ):
             result = client.resume()
@@ -57,8 +65,11 @@ class TestResume:
         assert result is True
         assert client.is_logged_in
 
-    def test_resume_no_token_returns_false(self, client):
-        with patch("keep4mac.api.keep_client.keyring.get_password", return_value=None):
+    def test_resume_no_sapisid_returns_false(self, client):
+        with (
+            patch("keep4mac.api.keep_client.keyring.get_password", return_value=None),
+            patch("keep4mac.api.keep_client._load_cookies", return_value={}),
+        ):
             result = client.resume()
 
         assert result is False

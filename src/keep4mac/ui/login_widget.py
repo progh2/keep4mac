@@ -8,14 +8,18 @@ from keep4mac.api.keep_client import AuthError, KeepClient
 
 
 class _BrowserLoginThread(QThread):
-    success = pyqtSignal(str, str)   # email, oauth_token
-    failed = pyqtSignal(str)         # error message
+    success = pyqtSignal()
+    failed = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+        self.result: tuple | None = None  # (email, sapisid, cookies)
 
     def run(self):
         from keep4mac.api.playwright_auth import run_browser_login
         try:
-            email, token = run_browser_login()
-            self.success.emit(email, token)
+            self.result = run_browser_login()
+            self.success.emit()
         except Exception as e:
             self.failed.emit(str(e))
 
@@ -128,9 +132,10 @@ class LoginWidget(QWidget):
         self._thread.failed.connect(self._on_browser_failed)
         self._thread.start()
 
-    def _on_browser_success(self, email: str, token: str):
+    def _on_browser_success(self):
+        email, sapisid, cookies = self._thread.result
         try:
-            self._client.login_with_browser(email, token)
+            self._client.login_with_browser(email, sapisid, cookies)
             self.login_success.emit()
         except AuthError as e:
             self._show_error(str(e))
