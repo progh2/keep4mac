@@ -1,12 +1,10 @@
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QPalette, QScreen
+from PyQt6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 
 class MainPanel(QWidget):
-    """트레이 아이콘 클릭 시 열리는 메인 패널 (Phase 4에서 내용 채워짐)."""
-
-    closed = pyqtSignal()
+    """트레이 메뉴 '열기' 클릭 시 표시되는 메인 패널."""
 
     def __init__(self):
         super().__init__(
@@ -14,34 +12,45 @@ class MainPanel(QWidget):
             | Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint,
         )
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self._build_ui()
-
-    def _build_ui(self):
         self.setFixedWidth(320)
         self.setMinimumHeight(400)
+        self._build_ui()
+        self._apply_style()
 
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#FFFFFF"))
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
-
+    def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Phase 4에서 실제 노트 목록 위젯으로 교체
-        placeholder = QLabel("⏳ 노트 목록 구현 중 (Phase 4)")
+        placeholder = QLabel("⏳ 노트 목록 구현 중\n(Phase 4)")
         placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         placeholder.setStyleSheet("color: #888; font-size: 14px; padding: 40px;")
         layout.addWidget(placeholder)
 
-    def focusOutEvent(self, event):
-        self.hide()
-        self.closed.emit()
-        super().focusOutEvent(event)
+    def _apply_style(self):
+        self.setStyleSheet("""
+            QWidget {
+                background: #ffffff;
+                border: 1px solid #d0d0d0;
+                border-radius: 8px;
+            }
+        """)
+
+    def show_near_menubar(self):
+        """화면 우상단 메뉴바 아래에 패널 배치."""
+        screen: QScreen = QApplication.primaryScreen()
+        sg = screen.availableGeometry()  # 메뉴바 제외한 영역
+
+        # 메뉴바 바로 아래, 오른쪽 끝 기준 배치
+        x = sg.right() - self.width() - 8
+        y = sg.top() + 4
+
+        self.move(x, y)
+        self.show()
+        self.raise_()
+        self.activateWindow()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
-            self.closed.emit()
         super().keyPressEvent(event)

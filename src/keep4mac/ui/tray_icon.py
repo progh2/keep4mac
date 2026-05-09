@@ -1,91 +1,52 @@
 import logging
+import sys
 
-from PyQt6.QtCore import QPoint, QRect
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+import rumps
+from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtWidgets import QApplication
 
-from keep4mac.ui.icons import make_status_icon, make_tray_icon
 from keep4mac.ui.panel import MainPanel
 
 logger = logging.getLogger(__name__)
 
+ICON_CHAR = "🗒"   # 노트 이모지 — 메뉴바에 텍스트로 표시
 
-class TrayIcon(QSystemTrayIcon):
-    def __init__(self, app: QApplication):
-        super().__init__()
-        self._app = app
+
+class TrayApp(rumps.App):
+    """rumps 기반 네이티브 macOS 메뉴바 앱."""
+
+    def __init__(self, qt_app: QApplication):
+        super().__init__(name="keep4mac", title=ICON_CHAR, quit_button=None)
+        self._qt_app = qt_app
         self._panel = MainPanel()
 
-        self.setIcon(make_tray_icon())
-        self.setToolTip("keep4mac")
-        self._build_menu()
+        self.menu = [
+            rumps.MenuItem("열기", callback=self._open),
+            rumps.MenuItem("동기화", callback=self._sync),
+            None,  # 구분선
+            rumps.MenuItem("종료", callback=self._quit),
+        ]
 
-        self.activated.connect(self._on_activated)
+    # ── rumps 타이머: Qt 이벤트 루프 통합 ──────────────────────
 
-    # ── 메뉴 구성 ─────────────────────────────────────────────
+    @rumps.timer(0.05)
+    def _process_qt(self, _):
+        """50ms마다 Qt 이벤트 처리 (rumps NSRunLoop 내에서 Qt 통합)."""
+        QCoreApplication.processEvents()
 
-    def _build_menu(self):
-        menu = QMenu()
+    # ── 메뉴 액션 ──────────────────────────────────────────────
 
-        open_action = QAction("열기", self)
-        open_action.triggered.connect(self._toggle_panel)
-        menu.addAction(open_action)
-
-        self._sync_action = QAction("동기화", self)
-        self._sync_action.triggered.connect(self._on_sync)
-        menu.addAction(self._sync_action)
-
-        menu.addSeparator()
-
-        quit_action = QAction("종료", self)
-        quit_action.triggered.connect(self._app.quit)
-        menu.addAction(quit_action)
-
-        self.setContextMenu(menu)
-
-    # ── 이벤트 핸들러 ──────────────────────────────────────────
-
-    def _on_activated(self, reason: QSystemTrayIcon.ActivationReason):
-        if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            self._toggle_panel()
-
-    def _toggle_panel(self):
+    def _open(self, _):
         if self._panel.isVisible():
             self._panel.hide()
         else:
-            self._show_panel()
+            self._panel.show_near_menubar()
 
-    def _show_panel(self):
-        geo: QRect = self.geometry()
-        screen = self._app.primaryScreen().geometry()
-
-        # 트레이 아이콘 아래에 패널 배치
-        x = geo.x() - self._panel.width() // 2 + geo.width() // 2
-        y = geo.y() + geo.height() + 4
-
-        # 화면 경계 보정
-        x = max(4, min(x, screen.width() - self._panel.width() - 4))
-        y = max(4, min(y, screen.height() - self._panel.minimumHeight() - 4))
-
-        self._panel.move(x, y)
-        self._panel.show()
-        self._panel.raise_()
-        self._panel.activateWindow()
-        self._panel.setFocus()
-
-    def _on_sync(self):
-        # Phase 7 동기화 연동 시 실제 구현
-        self.set_status("syncing")
+    def _sync(self, _):
+        # Phase 7에서 실제 동기화 연동
         logger.info("수동 동기화 요청")
+        rumps.notification("keep4mac", "", "동기화 기능은 Phase 7에서 구현됩니다.")
 
-    # ── 상태 아이콘 ────────────────────────────────────────────
-
-    def set_status(self, state: str):
-        """state: 'normal' | 'syncing' | 'error'"""
-        self.setIcon(make_status_icon(state))
-
-    # ── 패널 접근자 ────────────────────────────────────────────
-
-    @property
-    def panel(self) -> MainPanel:
-        return self._panel
+    def _quit(self, _):
+        self._panel.hide()
+        rumps.quit_application()
