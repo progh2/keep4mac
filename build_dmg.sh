@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.0"
+VERSION="0.1.1"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"

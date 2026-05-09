@@ -85,7 +85,7 @@ app = BUNDLE(
     coll,
     name="keep4mac.app",
     bundle_identifier="com.keep4mac.app",
-    version="0.1.0",
+    version="0.1.1",
     info_plist={
         "LSUIElement": True,          # 메뉴바 앱 — Dock 숨김
         "CFBundleName": "keep4mac",
