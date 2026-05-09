@@ -1,4 +1,0 @@
-#!/bin/bash
-# 이전 설치 파일 제거 후 새 버전 설치
-rm -rf /Applications/keep4mac.app
-exit 0
