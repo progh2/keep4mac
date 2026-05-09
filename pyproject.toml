@@ -14,6 +14,8 @@ dependencies = [
     "requests>=2.31.0",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "rumps>=0.4.0; sys_platform == 'darwin'",
+    "google-auth-oauthlib>=1.2.0",
+    "google-auth-httplib2>=0.2.0",
 ]
 
 [project.scripts]

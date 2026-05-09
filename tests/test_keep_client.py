@@ -48,8 +48,10 @@ class TestLogin:
 
 class TestResume:
     def test_resume_success(self, client):
+        # 호출 순서: auth_method → email → master_token
         with (
-            patch("keep4mac.api.keep_client.keyring.get_password", side_effect=["user@gmail.com", "tok123"]),
+            patch("keep4mac.api.keep_client.keyring.get_password",
+                  side_effect=["password", "user@gmail.com", "tok123"]),
             patch.object(client._keep, "resume"),
         ):
             result = client.resume()
