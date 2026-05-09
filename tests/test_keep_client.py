@@ -27,22 +27,21 @@ def client():
 
 class TestLogin:
     def test_login_success_saves_token(self, client):
-        mock_gpsoauth = {"Token": "master-tok-123"}
         with (
-            patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
-                  return_value=mock_gpsoauth),
-            patch.object(client._keep, "authenticate"),
+            patch.object(client._keep, "login"),
+            patch.object(client._keep, "getMasterToken", return_value="tok123"),
             patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
         ):
             client.login("user@gmail.com", "app-password")
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
-        mock_set.assert_any_call("keep4mac", "master_token", "master-tok-123")
+        mock_set.assert_any_call("keep4mac", "master_token", "tok123")
 
     def test_login_failure_raises_auth_error(self, client):
-        with patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
-                   return_value={"Error": "BadAuthentication"}):
+        import gkeepapi.exception as keep_exc
+        with patch.object(client._keep, "login",
+                          side_effect=keep_exc.LoginException("BadAuthentication")):
             with pytest.raises(AuthError):
                 client.login("user@gmail.com", "wrong")
 

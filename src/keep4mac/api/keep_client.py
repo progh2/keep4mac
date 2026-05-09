@@ -1,9 +1,9 @@
 import logging
-import uuid
+import warnings
 from typing import Optional
 
 import gkeepapi
-import gpsoauth
+import gkeepapi.exception as keep_exc
 import keyring
 
 from keep4mac.core.models import ChecklistItem, NoteColor, NoteModel, NoteType
@@ -14,6 +14,21 @@ _SERVICE = "keep4mac"
 _KEY_TOKEN = "master_token"
 _KEY_EMAIL = "email"
 _KEY_AUTH = "auth_method"   # 'password' | 'oauth'
+
+
+def _auth_error_msg(code: str) -> str:
+    if code == "BadAuthentication":
+        return (
+            "앱 비밀번호가 올바르지 않습니다.\n\n"
+            "① Google 계정에 2단계 인증이 활성화되어 있어야 합니다\n"
+            "② '앱 비밀번호 페이지 열기'에서 새로 발급한 비밀번호를 사용하세요\n"
+            "③ 일반 Google 로그인 비밀번호가 아닌 앱 비밀번호(16자리)를 입력하세요"
+        )
+    if code == "InvalidSecondFactor":
+        return "2단계 인증 오류입니다. 앱 비밀번호를 새로 발급받아 다시 시도하세요."
+    if code == "AccountDisabled":
+        return "Google 계정이 비활성화되어 있습니다."
+    return f"로그인 실패 ({code or '알 수 없는 오류'})"
 
 
 def _parse_color(color) -> NoteColor:
@@ -69,36 +84,28 @@ class KeepClient:
     # ── 인증 ──────────────────────────────────────────────────
 
     def login(self, email: str, password: str) -> None:
-        """앱 비밀번호로 최초 로그인. gpsoauth로 마스터 토큰을 받아 Keychain에 저장."""
-        device_id = f"{uuid.getnode():x}"
-
+        """앱 비밀번호로 최초 로그인. 마스터 토큰을 Keychain에 저장."""
         try:
-            res = gpsoauth.perform_master_login(email, password, device_id)
-        except Exception as e:
-            raise AuthError(f"네트워크 오류: {e}") from e
-
-        if res.get("Error") == "NeedsBrowser":
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._keep.login(email, password)
+        except keep_exc.BrowserLoginRequiredException:
             raise AuthError(
                 "브라우저 인증이 필요합니다.\n"
-                "Google 계정 보안 설정에서 앱 비밀번호를 사용하거나\n"
-                "2단계 인증을 활성화해주세요."
+                "Google 계정에 2단계 인증을 활성화하면\n"
+                "앱 비밀번호를 사용할 수 있습니다."
             )
-
-        if "Token" not in res:
-            raise AuthError(f"로그인 실패: {res.get('Error', '알 수 없는 오류')}")
-
-        master_token = res["Token"]
-
-        try:
-            self._keep.authenticate(email, master_token, sync=False)
+        except keep_exc.LoginException as e:
+            code = e.args[0] if e.args else ""
+            raise AuthError(_auth_error_msg(code)) from e
         except Exception as e:
-            raise AuthError(f"Keep 인증 실패: {e}") from e
+            raise AuthError(f"로그인 오류: {e}") from e
 
         self._email = email
         self._logged_in = True
-        keyring.set_password(_SERVICE, _KEY_TOKEN, master_token)
+        keyring.set_password(_SERVICE, _KEY_TOKEN, self._keep.getMasterToken())
         keyring.set_password(_SERVICE, _KEY_EMAIL, email)
-        logger.info("로그인 성공, 마스터 토큰 저장 완료")
+        logger.info("로그인 성공")
 
     def resume(self) -> bool:
         """Keychain에 저장된 마스터 토큰으로 재인증."""
