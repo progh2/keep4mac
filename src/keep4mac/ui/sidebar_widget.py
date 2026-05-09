@@ -1,6 +1,8 @@
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
+from keep4mac.core import autostart
+
 _BTN_CSS = """
     QPushButton {{
         background: transparent;
@@ -18,6 +20,19 @@ _BTN_CSS = """
         background: #e8eaed;
         color: #202124;
     }}
+"""
+
+_AUTOSTART_ON_CSS = """
+    QPushButton {
+        background: #e8f0fe;
+        border: none;
+        color: #1a73e8;
+        font-size: 10px;
+        padding: 4px 2px;
+        border-radius: 6px;
+    }
+    QPushButton:hover { background: #d2e3fc; }
+    QPushButton:pressed { background: #c5d9fb; }
 """
 
 
@@ -49,11 +64,33 @@ class SidebarWidget(QWidget):
 
         layout.addStretch()
 
+        self._autostart_btn = QPushButton()
+        self._autostart_btn.setFixedSize(52, 50)
+        self._autostart_btn.clicked.connect(self._on_autostart_toggle)
+        layout.addWidget(self._autostart_btn)
+        self._refresh_autostart_btn()
+
         for icon, label, signal in [
             ("↩", "로그아웃", self.logout_requested),
             ("✕", "종료", self.quit_requested),
         ]:
             layout.addWidget(self._make_btn(icon, label, signal))
+
+    def _refresh_autostart_btn(self):
+        enabled = autostart.is_enabled()
+        self._autostart_btn.setText("🚀\n자동시작" if enabled else "🚀\n자동시작")
+        self._autostart_btn.setStyleSheet(
+            _AUTOSTART_ON_CSS if enabled else _BTN_CSS.format()
+        )
+        self._autostart_btn.setToolTip(
+            "로그인 시 자동 시작 활성화됨 (클릭하여 해제)"
+            if enabled else
+            "로그인 시 자동 시작 (클릭하여 설정)"
+        )
+
+    def _on_autostart_toggle(self):
+        autostart.toggle()
+        self._refresh_autostart_btn()
 
     def _make_btn(self, icon: str, label: str, signal) -> QPushButton:
         btn = QPushButton(f"{icon}\n{label}")
