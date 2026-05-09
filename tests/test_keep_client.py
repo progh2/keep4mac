@@ -25,25 +25,22 @@ def client():
     return KeepClient()
 
 
-class TestLogin:
+class TestLoginWithBrowser:
     def test_login_success_saves_token(self, client):
         with (
-            patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
-                  return_value={"Token": "tok123"}),
-            patch.object(client._keep, "authenticate"),
+            patch.object(client._keep, "load"),
             patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
         ):
-            client.login("user@gmail.com", "app-password")
+            client.login_with_browser("user@gmail.com", "oauth-token-abc")
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
-        mock_set.assert_any_call("keep4mac", "master_token", "tok123")
+        mock_set.assert_any_call("keep4mac", "oauth_token", "oauth-token-abc")
 
     def test_login_failure_raises_auth_error(self, client):
-        with patch("keep4mac.api.keep_client.gpsoauth.perform_master_login",
-                   return_value={"Error": "BadAuthentication"}):
+        with patch.object(client._keep, "load", side_effect=Exception("sync error")):
             with pytest.raises(AuthError):
-                client.login("user@gmail.com", "wrong")
+                client.login_with_browser("user@gmail.com", "bad-token")
 
         assert not client.is_logged_in
 
@@ -52,8 +49,8 @@ class TestResume:
     def test_resume_success(self, client):
         with (
             patch("keep4mac.api.keep_client.keyring.get_password",
-                  side_effect=["user@gmail.com", "tok123"]),
-            patch.object(client._keep, "authenticate"),
+                  side_effect=["user@gmail.com", "saved-token"]),
+            patch.object(client._keep, "load"),
         ):
             result = client.resume()
 

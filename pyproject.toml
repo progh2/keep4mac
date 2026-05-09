@@ -12,10 +12,9 @@ dependencies = [
     "PyQt6>=6.6.0",
     "keyring>=24.0.0",
     "requests>=2.31.0",
+    "playwright>=1.40.0",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "rumps>=0.4.0; sys_platform == 'darwin'",
-    "google-auth-oauthlib>=1.2.0",
-    "google-auth-httplib2>=0.2.0",
 ]
 
 [project.scripts]
