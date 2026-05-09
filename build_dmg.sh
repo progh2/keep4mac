@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.7"
+VERSION="0.1.8"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -57,6 +57,7 @@ pkgbuild \
     --component "${APP_PATH}" \
     --identifier "com.keep4mac.app" \
     --version "${VERSION}" \
+    --scripts "pkg_scripts" \
     "${PKG_PATH}" 2>&1
 echo "  ✓ PKG 완료: ${PKG_PATH}"
 
