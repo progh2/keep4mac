@@ -17,7 +17,15 @@ def run_browser_login() -> tuple[str, str]:
     Raises:
         RuntimeError: 로그인 실패 또는 타임아웃
     """
-    from playwright.sync_api import sync_playwright
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise RuntimeError(
+            "playwright 패키지가 설치되지 않았습니다.\n\n"
+            "터미널에서 다음을 실행하세요:\n"
+            "  pip install playwright\n"
+            "  python -m playwright install chromium"
+        )
 
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -37,10 +37,7 @@ class TrayApp(rumps.App):
         QCoreApplication.processEvents()
 
     def _open(self, _):
-        if self._panel.isVisible():
-            self._panel.hide()
-        else:
-            self._panel.show_near_menubar()
+        self._panel.show_near_menubar()
 
     def _sync(self, _):
         if not self._client.is_logged_in:

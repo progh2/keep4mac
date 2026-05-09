@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QScreen
-from PyQt6.QtWidgets import QApplication, QStackedWidget, QWidget
+from PyQt6.QtWidgets import QApplication, QPushButton, QStackedWidget, QWidget
 
 from keep4mac.api.keep_client import KeepClient
 from keep4mac.ui.login_widget import LoginWidget
@@ -43,8 +43,22 @@ class MainPanel(QWidget):
         self._stack.addWidget(self._login_w)   # index 0
         self._stack.addWidget(self._notes_w)   # index 1
 
-        # QStackedWidget이 MainPanel 전체를 채우게 설정
         self._stack.setGeometry(0, 0, self.width(), self.minimumHeight())
+
+        # 닫기 버튼 (패널 우상단)
+        close_btn = QPushButton("✕", self)
+        close_btn.setFixedSize(24, 24)
+        close_btn.move(self.width() - 30, 6)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(255,255,255,0.3); color: white;
+                border: none; border-radius: 12px;
+                font-size: 11px; font-weight: bold;
+            }
+            QPushButton:hover { background: rgba(255,255,255,0.5); }
+        """)
+        close_btn.clicked.connect(self.hide)
+        close_btn.raise_()
 
     def resizeEvent(self, event):
         self._stack.resize(self.size())
