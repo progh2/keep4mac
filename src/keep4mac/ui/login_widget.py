@@ -133,9 +133,9 @@ class LoginWidget(QWidget):
         self._thread.start()
 
     def _on_browser_success(self):
-        email, sapisid, cookies = self._thread.result
+        email, sapisid, cookies, api_key = self._thread.result
         try:
-            self._client.login_with_browser(email, sapisid, cookies)
+            self._client.login_with_browser(email, sapisid, cookies, api_key)
             self.login_success.emit()
         except AuthError as e:
             self._show_error(str(e))

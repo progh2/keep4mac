@@ -26,19 +26,19 @@ def client():
 
 
 class TestLoginWithBrowser:
-    def test_login_success_saves_credentials(self, client):
+    def test_login_success_saves_session(self, client):
         with (
             patch.object(client._keep, "load"),
             patch.object(client._keep, "sync"),
             patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
-            patch("keep4mac.api.keep_client._save_cookies") as mock_save,
+            patch("keep4mac.api.keep_client._save_session") as mock_save,
         ):
-            client.login_with_browser("user@gmail.com", "sapisid-abc", {"SID": "x"})
+            client.login_with_browser("user@gmail.com", "sapisid-abc", {"SID": "x"}, "key123")
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
         mock_set.assert_any_call("keep4mac", "sapisid", "sapisid-abc")
-        mock_save.assert_called_once_with({"SID": "x"})
+        mock_save.assert_called_once_with({"SID": "x"}, "key123")
 
     def test_login_failure_raises_auth_error(self, client):
         with (
@@ -46,7 +46,7 @@ class TestLoginWithBrowser:
             patch.object(client._keep, "sync", side_effect=Exception("sync error")),
         ):
             with pytest.raises(AuthError):
-                client.login_with_browser("user@gmail.com", "sapisid-abc", {})
+                client.login_with_browser("user@gmail.com", "sapisid-abc", {}, "")
 
         assert not client.is_logged_in
 
@@ -56,8 +56,8 @@ class TestResume:
         with (
             patch("keep4mac.api.keep_client.keyring.get_password",
                   side_effect=["user@gmail.com", "sapisid-abc"]),
-            patch("keep4mac.api.keep_client._load_cookies",
-                  return_value={"SID": "x"}),
+            patch("keep4mac.api.keep_client._load_session",
+                  return_value=({"SID": "x"}, "key123")),
             patch.object(client._keep, "load"),
         ):
             result = client.resume()
@@ -68,7 +68,7 @@ class TestResume:
     def test_resume_no_sapisid_returns_false(self, client):
         with (
             patch("keep4mac.api.keep_client.keyring.get_password", return_value=None),
-            patch("keep4mac.api.keep_client._load_cookies", return_value={}),
+            patch("keep4mac.api.keep_client._load_session", return_value=({}, "")),
         ):
             result = client.resume()
 

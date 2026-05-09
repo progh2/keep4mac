@@ -2,25 +2,28 @@ import logging
 import re
 import time
 from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 PROFILE_DIR = Path.home() / ".config" / "keep4mac" / "chrome_profile"
 
-# 추출할 Google 인증 쿠키 목록
 _GOOGLE_COOKIE_NAMES = {
     "SID", "SSID", "APISID", "SAPISID", "HSID",
-    "OSID", "LSID", "NID", "1P_JAR", "__Secure-1PSID",
-    "__Secure-3PSID", "__Secure-1PAPISID", "__Secure-3PAPISID",
+    "OSID", "LSID", "NID", "1P_JAR",
+    "__Secure-1PSID", "__Secure-3PSID",
+    "__Secure-1PAPISID", "__Secure-3PAPISID",
     "__Secure-1PSIDTS", "__Secure-3PSIDTS",
 }
 
+_KEEP_API_HOST = "notes-pa.clients6.google.com/notes/v1"
 
-def run_browser_login() -> tuple[str, str, dict]:
-    """keep.google.com 로그인 후 SAPISID와 세션 쿠키를 추출한다.
+
+def run_browser_login() -> tuple[str, str, dict, str]:
+    """keep.google.com 로그인 후 인증 정보를 추출한다.
 
     Returns:
-        (email, sapisid, cookies_dict)
+        (email, sapisid, cookies_dict, api_key)
     Raises:
         RuntimeError: 로그인 실패 또는 취소
     """
@@ -37,6 +40,7 @@ def run_browser_login() -> tuple[str, str, dict]:
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
 
     page_loaded = False
+    captured_key: Optional[str] = None
 
     with sync_playwright() as p:
         ctx = p.chromium.launch_persistent_context(
@@ -53,9 +57,13 @@ def run_browser_login() -> tuple[str, str, dict]:
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
 
         def _on_response(response):
-            nonlocal page_loaded
-            if "notes-pa.clients6.google.com/notes/v1" in response.url:
+            nonlocal page_loaded, captured_key
+            if _KEEP_API_HOST in response.url:
                 page_loaded = True
+                if not captured_key:
+                    m = re.search(r"[?&]key=([^&]+)", response.url)
+                    if m:
+                        captured_key = m.group(1)
 
         page.on("response", _on_response)
 
@@ -65,7 +73,6 @@ def run_browser_login() -> tuple[str, str, dict]:
         except Exception:
             pass
 
-        # Keep API 응답이 올 때까지 최대 5분 대기
         if not page_loaded:
             start = time.time()
             while not page_loaded and (time.time() - start) < 300:
@@ -74,7 +81,6 @@ def run_browser_login() -> tuple[str, str, dict]:
                 except Exception:
                     break
 
-        # 쿠키 추출
         cookies_dict: dict = {}
         sapisid: str = ""
         try:
@@ -109,8 +115,8 @@ def run_browser_login() -> tuple[str, str, dict]:
             "로그인 후 Keep 페이지가 열릴 때까지 기다려주세요."
         )
 
-    logger.info("SAPISID 및 쿠키 추출 완료 (email=%s)", email or "unknown")
-    return email, sapisid, cookies_dict
+    logger.info("인증 정보 추출 완료 (email=%s, api_key=%s…)", email or "unknown", (captured_key or "")[:8])
+    return email, sapisid, cookies_dict, captured_key or ""
 
 
 def _safe_wait(page, ms: int) -> None:

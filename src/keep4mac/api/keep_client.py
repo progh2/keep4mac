@@ -17,14 +17,16 @@ logger = logging.getLogger(__name__)
 _SERVICE = "keep4mac"
 _KEY_SAPISID = "sapisid"
 _KEY_EMAIL = "email"
-_COOKIES_PATH = Path.home() / ".config" / "keep4mac" / "session.json"
+_SESSION_PATH = Path.home() / ".config" / "keep4mac" / "session.json"
+
+# keep.google.com이 실제로 사용하는 API 엔드포인트 (SAPISIDHASH 인증 사용)
+_BROWSER_API_URL = "https://notes-pa.clients6.google.com/notes/v1/"
 
 
 # ── SAPISIDHASH 인증 ────────────────────────────────────────────
 
 
 def _sapisidhash(sapisid: str) -> str:
-    """SAPISID 쿠키로 SAPISIDHASH Authorization 헤더 값을 생성한다."""
     ts = int(time.time())
     data = f"{ts} {sapisid} https://keep.google.com"
     h = hashlib.sha1(data.encode()).hexdigest()
@@ -32,32 +34,33 @@ def _sapisidhash(sapisid: str) -> str:
 
 
 class _SAPIAuth(req_lib.auth.AuthBase):
-    """requests.Session에 주입하는 SAPISIDHASH 인증 객체."""
-
     def __init__(self, sapisid: str):
         self._sapisid = sapisid
 
     def __call__(self, r):
         r.headers["Authorization"] = _sapisidhash(self._sapisid)
         r.headers["X-Goog-AuthUser"] = "0"
+        r.headers["Origin"] = "https://keep.google.com"
+        r.headers["Referer"] = "https://keep.google.com/"
         return r
 
 
-# ── 쿠키 저장/로드 ────────────────────────────────────────────
+# ── 세션 저장/로드 ─────────────────────────────────────────────
 
 
-def _save_cookies(cookies: dict) -> None:
-    _COOKIES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _COOKIES_PATH.write_text(json.dumps(cookies))
+def _save_session(cookies: dict, api_key: str) -> None:
+    _SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _SESSION_PATH.write_text(json.dumps({"cookies": cookies, "api_key": api_key}))
 
 
-def _load_cookies() -> dict:
-    if not _COOKIES_PATH.exists():
-        return {}
+def _load_session() -> tuple[dict, str]:
+    if not _SESSION_PATH.exists():
+        return {}, ""
     try:
-        return json.loads(_COOKIES_PATH.read_text())
+        data = json.loads(_SESSION_PATH.read_text())
+        return data.get("cookies", {}), data.get("api_key", "")
     except Exception:
-        return {}
+        return {}, ""
 
 
 # ── 노트 변환 ──────────────────────────────────────────────────
@@ -121,16 +124,12 @@ class KeepClient:
 
     # ── 인증 ──────────────────────────────────────────────────
 
-    def login_with_browser(self, email: str, sapisid: str, cookies: dict) -> None:
-        """브라우저에서 추출한 SAPISID/쿠키로 gkeepapi 세션을 인증한다."""
-        self._inject_auth(sapisid, cookies)
+    def login_with_browser(self, email: str, sapisid: str, cookies: dict, api_key: str) -> None:
+        """브라우저 세션 정보로 gkeepapi를 인증하고 Keep과 동기화한다."""
+        self._inject_auth(sapisid, cookies, api_key)
 
         try:
-            # load()로 gkeepapi 내부 상태 초기화 후 sync()로 노트 가져오기
-            dummy_auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
-            dummy_auth._email = email or "user@gmail.com"
-            dummy_auth._device_id = f"{get_mac():x}"
-            dummy_auth._auth_token = "dummy"
+            dummy_auth = self._make_dummy_auth(email)
             self._keep.load(dummy_auth, sync=False)
             self._keep.sync()
         except Exception as e:
@@ -140,25 +139,22 @@ class KeepClient:
         self._logged_in = True
         keyring.set_password(_SERVICE, _KEY_SAPISID, sapisid)
         keyring.set_password(_SERVICE, _KEY_EMAIL, email or "")
-        _save_cookies(cookies)
-        logger.info("브라우저 로그인 성공 (email=%s)", email)
+        _save_session(cookies, api_key)
+        logger.info("로그인 성공 (email=%s)", email)
 
     def resume(self) -> bool:
-        """저장된 SAPISID/쿠키로 재인증을 시도한다."""
+        """저장된 세션 정보로 재인증한다."""
         email = keyring.get_password(_SERVICE, _KEY_EMAIL)
         sapisid = keyring.get_password(_SERVICE, _KEY_SAPISID)
-        cookies = _load_cookies()
+        cookies, api_key = _load_session()
 
         if not sapisid or not cookies:
             return False
 
-        self._inject_auth(sapisid, cookies)
+        self._inject_auth(sapisid, cookies, api_key)
 
         try:
-            dummy_auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
-            dummy_auth._email = email or "user@gmail.com"
-            dummy_auth._device_id = f"{get_mac():x}"
-            dummy_auth._auth_token = "dummy"
+            dummy_auth = self._make_dummy_auth(email)
             self._keep.load(dummy_auth, sync=False)
         except Exception as e:
             logger.warning("재인증 실패: %s", e)
@@ -170,23 +166,43 @@ class KeepClient:
         return True
 
     def logout(self) -> None:
-        """로그아웃 및 저장된 인증 정보 삭제."""
         for key in (_KEY_SAPISID, _KEY_EMAIL):
             try:
                 keyring.delete_password(_SERVICE, key)
             except keyring.errors.PasswordDeleteError:
                 pass
-        if _COOKIES_PATH.exists():
-            _COOKIES_PATH.unlink()
+        if _SESSION_PATH.exists():
+            _SESSION_PATH.unlink()
         self._logged_in = False
         self._email = None
 
-    def _inject_auth(self, sapisid: str, cookies: dict) -> None:
-        """gkeepapi의 requests.Session에 SAPISIDHASH 인증과 쿠키를 주입한다."""
+    def _inject_auth(self, sapisid: str, cookies: dict, api_key: str) -> None:
+        """gkeepapi의 requests 세션을 브라우저 인증(SAPISIDHASH)으로 패치한다."""
         sapi_auth = _SAPIAuth(sapisid)
+        params = {"alt": "json"}
+        if api_key:
+            params["key"] = api_key
+
         for api_obj in [self._keep._keep_api, self._keep._reminders_api]:
+            # ① 엔드포인트를 브라우저용으로 변경
+            api_obj._base_url = _BROWSER_API_URL
+            # ② SAPISIDHASH 인증 + 쿠키 주입
             api_obj._session.auth = sapi_auth
             api_obj._session.cookies.update(cookies)
+            # ③ 필수 쿼리 파라미터 고정
+            api_obj._session.params = params
+
+    def _make_dummy_auth(self, email: str) -> gkeepapi.APIAuth:
+        """gkeepapi 내부 인증 체크를 통과하는 더미 APIAuth를 생성한다.
+        실제 HTTP 인증은 session.auth(_SAPIAuth)가 담당한다.
+        """
+        auth = gkeepapi.APIAuth(gkeepapi.Keep.OAUTH_SCOPES)
+        auth._email = email or "user@gmail.com"
+        auth._device_id = f"{get_mac():x}"
+        auth._auth_token = "dummy"
+        # OAuth 재발급 시도(refresh)를 차단 — SAPISIDHASH 방식이므로 불필요
+        auth.refresh = lambda: None
+        return auth
 
     @property
     def is_logged_in(self) -> bool:
