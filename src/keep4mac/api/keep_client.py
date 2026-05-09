@@ -1,7 +1,8 @@
 import logging
-import warnings
 from typing import Optional
+from uuid import getnode as get_mac
 
+import gpsoauth
 import gkeepapi
 import gkeepapi.exception as keep_exc
 import keyring
@@ -85,25 +86,33 @@ class KeepClient:
 
     def login(self, email: str, password: str) -> None:
         """앱 비밀번호로 최초 로그인. 마스터 토큰을 Keychain에 저장."""
+        device_id = f"{get_mac():x}"
+
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                self._keep.login(email, password)
-        except keep_exc.BrowserLoginRequiredException:
+            res = gpsoauth.perform_master_login(email, password, device_id)
+        except Exception as e:
+            raise AuthError(f"네트워크 오류: {e}") from e
+
+        if res.get("Error") == "NeedsBrowser":
             raise AuthError(
                 "브라우저 인증이 필요합니다.\n"
                 "Google 계정에 2단계 인증을 활성화하면\n"
                 "앱 비밀번호를 사용할 수 있습니다."
             )
-        except keep_exc.LoginException as e:
-            code = e.args[0] if e.args else ""
-            raise AuthError(_auth_error_msg(code)) from e
+
+        if "Token" not in res:
+            raise AuthError(_auth_error_msg(res.get("Error", "")))
+
+        master_token = res["Token"]
+
+        try:
+            self._keep.authenticate(email, master_token)
         except Exception as e:
-            raise AuthError(f"로그인 오류: {e}") from e
+            raise AuthError(f"Keep 인증 실패: {e}") from e
 
         self._email = email
         self._logged_in = True
-        keyring.set_password(_SERVICE, _KEY_TOKEN, self._keep.getMasterToken())
+        keyring.set_password(_SERVICE, _KEY_TOKEN, master_token)
         keyring.set_password(_SERVICE, _KEY_EMAIL, email)
         logger.info("로그인 성공")
 
