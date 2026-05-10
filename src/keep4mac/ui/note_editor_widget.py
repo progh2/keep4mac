@@ -22,6 +22,20 @@ from keep4mac.core.url_utils import extract_urls, short_url
 from keep4mac.i18n import gettext as _
 
 
+class _IMELineEdit(QLineEdit):
+    """macOS 한국어 IME 첫 글자 자소 분리 방지 — focusIn 시 IME 재초기화."""
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        QGuiApplication.inputMethod().reset()
+
+
+class _IMETextEdit(QTextEdit):
+    """macOS 한국어 IME 첫 글자 자소 분리 방지 — focusIn 시 IME 재초기화."""
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        QGuiApplication.inputMethod().reset()
+
+
 class _TranslateThread(QThread):
     """MyMemory 무료 API를 사용해 제목·본문을 백그라운드 번역한다."""
     done = pyqtSignal(str, str)   # (translated_title, translated_content)
@@ -354,7 +368,7 @@ class NoteEditorWidget(QWidget):
         bl.setContentsMargins(16, 12, 16, 12)
         bl.setSpacing(10)
 
-        self._title_edit = QLineEdit()
+        self._title_edit = _IMELineEdit()
         self._title_edit.setPlaceholderText(_("Title"))
         self._title_edit.setStyleSheet("""
             QLineEdit {
@@ -366,7 +380,7 @@ class NoteEditorWidget(QWidget):
         bl.addWidget(self._title_edit)
 
         # 텍스트 노트 편집기
-        self._body_edit = QTextEdit()
+        self._body_edit = _IMETextEdit()
         self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._body_edit.setStyleSheet("""
             QTextEdit { font-size: 13px; color: #202124; border: none; background: transparent; }
@@ -494,6 +508,20 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.clicked.connect(self._on_delete)
         fl.addWidget(self._delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        self._copy_btn = QPushButton("📋")
+        self._copy_btn.setFixedSize(32, 32)
+        self._copy_btn.setToolTip(_("Copy to clipboard"))
+        self._copy_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #5f6368;
+                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f1f3f4; }
+            QPushButton:pressed { background: #e8eaed; }
+        """)
+        self._copy_btn.clicked.connect(self._on_copy_to_clipboard)
+        fl.addWidget(self._copy_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         fl.addStretch()
         self._refresh_palette()
         self._refresh_pin_btn()
@@ -535,6 +563,7 @@ class NoteEditorWidget(QWidget):
         self._title_edit.setPlaceholderText(_("Title"))
         self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._delete_btn.setToolTip(_("Delete"))
+        self._copy_btn.setToolTip(_("Copy to clipboard"))
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._export_btn.setToolTip(_("Export / Share"))
         self._revert_btn.setToolTip(_("Revert"))
@@ -813,6 +842,12 @@ class NoteEditorWidget(QWidget):
             self._client.delete_image(self._note_id, self._image_url)
             self._image_url = None
             self._img_section.hide()
+
+    def _on_copy_to_clipboard(self):
+        title, body = self._note_content()
+        parts = [p for p in [title, body] if p]
+        QApplication.clipboard().setText("\n\n".join(parts))
+        self._show_export_toast(f"✓  {_('Copied to clipboard')}")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
