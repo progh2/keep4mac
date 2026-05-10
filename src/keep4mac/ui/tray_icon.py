@@ -85,7 +85,7 @@ class TrayApp(rumps.App):
         self._click_setup_done = True
         global _open_panel_fn, _btn_ref
         try:
-            _open_panel_fn = self._panel.show_near_menubar
+            _open_panel_fn = self._panel.toggle_visibility
             nsitem = self._nsapp.nsstatusitem
             nsitem.setMenu_(None)
             btn = nsitem.button()

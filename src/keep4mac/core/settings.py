@@ -28,3 +28,16 @@ def set_my_email(email: str) -> None:
     data = _load()
     data["my_email"] = email
     _save(data)
+
+
+def get_window_pos() -> list[int] | None:
+    pos = _load().get("window_pos")
+    if isinstance(pos, list) and len(pos) == 2:
+        return pos
+    return None
+
+
+def set_window_pos(x: int, y: int) -> None:
+    data = _load()
+    data["window_pos"] = [x, y]
+    _save(data)
