@@ -249,6 +249,48 @@ def _write_hwpx(path: str, title: str, body: str,
             z.writestr("Contents/BinData/image.png", img_data)
 
 
+def _write_docx(path: str, title: str, body: str,
+                checklist: "list[tuple[bool, str]] | None" = None,
+                img_data: bytes | None = None) -> None:
+    """python-docx로 .docx 파일을 생성한다. HWP 2014+에서 열 수 있다."""
+    import io
+    from docx import Document
+    from docx.shared import Pt, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+
+    # 페이지 여백 설정 (A4 기본)
+    for section in doc.sections:
+        section.top_margin    = Cm(2.5)
+        section.bottom_margin = Cm(2.5)
+        section.left_margin   = Cm(3.0)
+        section.right_margin  = Cm(3.0)
+
+    if title:
+        h = doc.add_heading(title, level=1)
+        h.runs[0].font.size = Pt(18)
+
+    if img_data:
+        try:
+            img_stream = io.BytesIO(img_data)
+            doc.add_picture(img_stream, width=Cm(14))
+            doc.add_paragraph()
+        except Exception:
+            pass
+
+    if checklist:
+        for is_chk, text in checklist:
+            sym = "☑" if is_chk else "☐"
+            p = doc.add_paragraph(style="List Bullet")
+            p.add_run(f"{sym} {text}")
+    elif body:
+        for line in body.splitlines():
+            doc.add_paragraph(line)
+
+    doc.save(path)
+
+
 # 색상 팔레트 순서 (DEFAULT는 흰색 맨 앞)
 _PALETTE = [
     NoteColor.DEFAULT, NoteColor.RED, NoteColor.ORANGE, NoteColor.YELLOW,
@@ -781,7 +823,7 @@ class NoteEditorWidget(QWidget):
         save_menu.addAction("Text (.txt)").triggered.connect(self._on_save_txt)
         save_menu.addAction("Image (.png)").triggered.connect(self._on_save_png)
         save_menu.addAction("PDF (.pdf)").triggered.connect(self._on_save_pdf)
-        save_menu.addAction("한글 (.hwpx)").triggered.connect(self._on_save_hwpx)
+        save_menu.addAction("Word/한글 (.docx)").triggered.connect(self._on_save_hwpx)
 
         email_act = menu.addAction(f"✉  {_('Send via Email')}")
         email_act.triggered.connect(self._on_email_share)
@@ -935,9 +977,9 @@ class NoteEditorWidget(QWidget):
     def _on_save_hwpx(self):
         title, body = self._note_content()
         stem = title or f"note_{(self._note_id or 'new')[:8]}"
-        default = str(Path.home() / "Downloads" / f"{stem}.hwpx")
+        default = str(Path.home() / "Downloads" / f"{stem}.docx")
         path, _filter = QFileDialog.getSaveFileName(
-            self, _("Save as File"), default, "한글 (*.hwpx);;All files (*)"
+            self, _("Save as File"), default, "Word/한글 (*.docx);;All files (*)"
         )
         if not path:
             return
@@ -945,7 +987,7 @@ class NoteEditorWidget(QWidget):
         if self._list_scroll.isVisible():
             checklist = [(cb.isChecked(), text) for cb, text in self._checklist_rows]
         img_data = self._fetch_note_image()
-        _write_hwpx(path, title, body, checklist, img_data)
+        _write_docx(path, title, body, checklist, img_data)
         self._show_export_toast(f"✓  {Path(path).name}")
 
     # ── #27 이메일 공유 ──────────────────────────────────────
