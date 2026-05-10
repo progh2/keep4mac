@@ -11,6 +11,7 @@ from keep4mac.i18n import gettext as _
 
 class _ImageThread(QThread):
     done = pyqtSignal(bytes)
+    error = pyqtSignal()
 
     def __init__(self, url: str, fetch_fn: Callable[[str], bytes | None]):
         super().__init__()
@@ -18,9 +19,14 @@ class _ImageThread(QThread):
         self._fetch_fn = fetch_fn
 
     def run(self):
-        data = self._fetch_fn(self._url)
-        if data:
-            self.done.emit(data)
+        try:
+            data = self._fetch_fn(self._url)
+            if data:
+                self.done.emit(data)
+            else:
+                self.error.emit()
+        except Exception:
+            self.error.emit()
 
 
 class NoteItemWidget(QFrame):
@@ -142,6 +148,7 @@ class NoteItemWidget(QFrame):
     def _load_image(self, url: str):
         self._img_thread = _ImageThread(url, self._fetch_fn)
         self._img_thread.done.connect(self._on_image_ready)
+        self._img_thread.error.connect(self._on_image_error)
         self._img_thread.start()
 
     def _on_image_ready(self, data: bytes):
@@ -151,11 +158,29 @@ class NoteItemWidget(QFrame):
         pixmap.loadFromData(data)
         if pixmap.isNull():
             return
+        self._pending_pixmap = pixmap
+        # 레이아웃 확정 후 적용 — 이벤트 루프 한 사이클 뒤에 실행
+        QTimer.singleShot(0, self._apply_pixmap)
+
+    def _apply_pixmap(self):
+        if self._img_label is None or not hasattr(self, "_pending_pixmap"):
+            return
         w = self._img_label.width() or 270
         h = self._img_label.height()
-        scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio,
-                               Qt.TransformationMode.SmoothTransformation)
+        scaled = self._pending_pixmap.scaled(
+            w, h,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
         self._img_label.setPixmap(scaled)
+
+    def _on_image_error(self):
+        if self._img_label is None:
+            return
+        self._img_label.setText("🖼")
+        self._img_label.setStyleSheet(
+            "background: #e8eaed; color: #9aa0a6; font-size: 28px;"
+        )
 
     def enterEvent(self, event):
         if self._copy_btn:
