@@ -8,6 +8,17 @@ from keep4mac.core.models import NoteModel, NoteType
 from keep4mac.core.url_utils import extract_urls, short_url
 from keep4mac.i18n import gettext as _
 
+_COPY_BTN_HIDDEN = """
+    QPushButton { background: transparent; border: none;
+                  color: transparent; font-size: 12px; border-radius: 4px; }
+"""
+_COPY_BTN_VISIBLE = """
+    QPushButton { background: transparent; border: none;
+                  font-size: 12px; border-radius: 4px; }
+    QPushButton:hover { background: rgba(0,0,0,0.08); }
+    QPushButton:pressed { background: rgba(0,0,0,0.14); }
+"""
+
 
 class _ImageThread(QThread):
     done = pyqtSignal(bytes)
@@ -92,17 +103,9 @@ class NoteItemWidget(QFrame):
         self._copy_btn = QPushButton("📋")
         self._copy_btn.setFixedSize(22, 22)
         self._copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._copy_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent; border: none;
-                font-size: 12px; border-radius: 4px;
-            }
-            QPushButton:hover { background: rgba(0,0,0,0.08); }
-            QPushButton:pressed { background: rgba(0,0,0,0.14); }
-        """)
         self._copy_btn.setToolTip(_("Copy to clipboard"))
         self._copy_btn.clicked.connect(self._copy_to_clipboard)
-        self._copy_btn.hide()
+        self._copy_btn.setStyleSheet(_COPY_BTN_HIDDEN)  # 항상 공간 차지, 아이콘만 숨김
         title_row.addWidget(self._copy_btn)
 
         tl.addLayout(title_row)
@@ -141,7 +144,7 @@ class NoteItemWidget(QFrame):
                 border-radius: 8px;
             }}
             NoteItemWidget:hover {{
-                border: 1px solid rgba(0,0,0,0.28);
+                border-color: rgba(0,0,0,0.28);
             }}
         """)
 
@@ -184,12 +187,12 @@ class NoteItemWidget(QFrame):
 
     def enterEvent(self, event):
         if self._copy_btn:
-            self._copy_btn.show()
+            self._copy_btn.setStyleSheet(_COPY_BTN_VISIBLE)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
         if self._copy_btn:
-            self._copy_btn.hide()
+            self._copy_btn.setStyleSheet(_COPY_BTN_HIDDEN)
         super().leaveEvent(event)
 
     def _copy_to_clipboard(self):
