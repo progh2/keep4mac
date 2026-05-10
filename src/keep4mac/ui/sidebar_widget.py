@@ -11,25 +11,25 @@ _BTN_CSS = """
     QPushButton {{
         background: transparent;
         border: none;
-        color: #9aa0a6;
+        color: #8e8e93;
         font-size: 10px;
         padding: 4px 2px;
         border-radius: 6px;
     }}
     QPushButton:hover {{
-        background: #f1f3f4;
-        color: #3c4043;
+        background: #f2f2f7;
+        color: #1c1c1e;
     }}
     QPushButton:pressed {{
-        background: #e8eaed;
-        color: #202124;
+        background: #e5e5ea;
+        color: #1c1c1e;
     }}
 """
 
 _MENU_CSS = """
     QMenu {
         background: white;
-        border: 1px solid #dadce0;
+        border: 1px solid #d1d1d6;
         border-radius: 8px;
         padding: 4px;
         font-size: 12px;
@@ -38,9 +38,9 @@ _MENU_CSS = """
         padding: 6px 16px;
         border-radius: 4px;
     }
-    QMenu::item:selected { background: #f1f3f4; color: #202124; }
-    QMenu::item:disabled { color: #1a73e8; font-weight: 600; }
-    QMenu::separator { height: 1px; background: #e8eaed; margin: 4px 8px; }
+    QMenu::item:selected { background: #f2f2f7; color: #1c1c1e; }
+    QMenu::item:disabled { color: #007AFF; font-weight: 600; }
+    QMenu::separator { height: 1px; background: #d1d1d6; margin: 4px 8px; }
     QMenu::right-arrow { image: none; width: 8px; }
 """
 
@@ -67,22 +67,22 @@ class SidebarWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
-        self._sync_btn      = self._make_btn("↻",  _("Sync"),     self.sync_requested)
+        self._sync_btn      = self._make_btn("🔄", _("Sync"),     self.sync_requested)
 
         for btn in (self._new_note_btn, self._sync_btn):
             layout.addWidget(btn)
 
         layout.addStretch()
 
-        self._settings_btn  = self._make_btn("⚙",  _("Settings"), None)
+        self._settings_btn  = self._make_btn("⚙️", _("Settings"), None)
         self._settings_btn.clicked.connect(self._on_settings_click)
         layout.addWidget(self._settings_btn)
 
     def retranslate_ui(self):
         """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""
         self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
-        self._sync_btn.setText(f"↻\n{self._wrap_label(_('Sync'))}")
-        self._settings_btn.setText(f"⚙\n{self._wrap_label(_('Settings'))}")
+        self._sync_btn.setText(f"🔄\n{self._wrap_label(_('Sync'))}")
+        self._settings_btn.setText(f"⚙️\n{self._wrap_label(_('Settings'))}")
 
     # ── 설정 메뉴 ─────────────────────────────────────────────
 
@@ -128,17 +128,17 @@ class SidebarWidget(QWidget):
         menu.addSeparator()
 
         # 정보
-        about_act = menu.addAction(f"❓  {_('About')}")
+        about_act = menu.addAction(f"ℹ️  {_('About')}")
         about_act.triggered.connect(lambda: self.about_requested.emit())
 
         # 로그아웃
-        logout_act = menu.addAction(f"↩  {_('Logout')}")
+        logout_act = menu.addAction(f"🚪  {_('Logout')}")
         logout_act.triggered.connect(lambda: self.logout_requested.emit())
 
         menu.addSeparator()
 
         # 종료
-        quit_act = menu.addAction(f"✕  {_('Quit')}")
+        quit_act = menu.addAction(f"✖️  {_('Quit')}")
         quit_act.triggered.connect(lambda: self.quit_requested.emit())
 
         pos = self._settings_btn.mapToGlobal(self._settings_btn.rect().topRight())

@@ -72,7 +72,7 @@ class NoteItemWidget(QFrame):
             self._img_label = QLabel()
             self._img_label.setFixedHeight(130)
             self._img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._img_label.setStyleSheet("background: #e8eaed;")
+            self._img_label.setStyleSheet("background: #e5e5ea;")
             layout.addWidget(self._img_label)
 
         # 텍스트 영역
@@ -94,7 +94,7 @@ class NoteItemWidget(QFrame):
 
         if note.title or note.pinned:
             title_label = QLabel(note.title)
-            title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #202124; background: transparent;")
+            title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #1c1c1e; background: transparent;")
             title_label.setWordWrap(True)
             title_row.addWidget(title_label, 1)
         else:
@@ -114,7 +114,7 @@ class NoteItemWidget(QFrame):
         content = note.content
         if content:
             content_label = QLabel(content)
-            content_label.setStyleSheet("font-size: 12px; color: #5f6368; background: transparent;")
+            content_label.setStyleSheet("font-size: 12px; color: #636366; background: transparent;")
             content_label.setWordWrap(True)
             tl.addWidget(content_label)
 
@@ -130,7 +130,7 @@ class NoteItemWidget(QFrame):
             link_row.addWidget(link_icon)
             suffix = f" 외 {len(urls) - 1}개" if len(urls) > 1 else ""
             link_lbl = QLabel(short_url(urls[0], 36) + suffix)
-            link_lbl.setStyleSheet("font-size: 11px; color: #1a73e8; background: transparent;")
+            link_lbl.setStyleSheet("font-size: 11px; color: #007AFF; background: transparent;")
             link_row.addWidget(link_lbl, 1)
             tl.addLayout(link_row)
 
@@ -141,10 +141,10 @@ class NoteItemWidget(QFrame):
             NoteItemWidget {{
                 background: {bg_hex};
                 border: 1px solid rgba(0,0,0,0.10);
-                border-radius: 8px;
+                border-radius: 10px;
             }}
             NoteItemWidget:hover {{
-                border-color: rgba(0,0,0,0.28);
+                border-color: rgba(0,0,0,0.22);
             }}
         """)
 
@@ -182,7 +182,7 @@ class NoteItemWidget(QFrame):
             return
         self._img_label.setText("🖼")
         self._img_label.setStyleSheet(
-            "background: #e8eaed; color: #9aa0a6; font-size: 28px;"
+            "background: #e5e5ea; color: #8e8e93; font-size: 28px;"
         )
 
     def enterEvent(self, event):

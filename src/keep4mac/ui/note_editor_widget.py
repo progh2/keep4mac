@@ -338,7 +338,7 @@ class NoteEditorWidget(QWidget):
         # 헤더
         header = QWidget()
         header.setFixedHeight(48)
-        header.setStyleSheet("background: #1a73e8;")
+        header.setStyleSheet("background: #f5f5f7; border-bottom: 1px solid #d1d1d6;")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 0, 8, 0)
         hl.setSpacing(4)
@@ -346,15 +346,15 @@ class NoteEditorWidget(QWidget):
         back_btn = QPushButton("←")
         back_btn.setFixedSize(32, 32)
         back_btn.setStyleSheet("""
-            QPushButton { background: transparent; color: white; border: none; font-size: 16px; }
-            QPushButton:hover { background: rgba(255,255,255,0.2); border-radius: 16px; }
+            QPushButton { background: transparent; color: #007AFF; border: none; font-size: 16px; }
+            QPushButton:hover { background: rgba(0,0,0,0.06); border-radius: 16px; }
         """)
         back_btn.clicked.connect(self._on_back)
         hl.addWidget(back_btn)
 
         self._header_label = QLabel(_("Edit Note"))
         self._header_label.setStyleSheet(
-            "font-size: 14px; font-weight: 600; color: white; background: transparent;"
+            "font-size: 14px; font-weight: 600; color: #1c1c1e; background: transparent;"
         )
         hl.addWidget(self._header_label, 1)
 
@@ -372,8 +372,8 @@ class NoteEditorWidget(QWidget):
         self._title_edit.setPlaceholderText(_("Title"))
         self._title_edit.setStyleSheet("""
             QLineEdit {
-                font-size: 16px; font-weight: 600; color: #202124;
-                border: none; border-bottom: 1px solid #e8eaed;
+                font-size: 16px; font-weight: 600; color: #1c1c1e;
+                border: none; border-bottom: 1px solid #d1d1d6;
                 padding: 4px 0; background: transparent;
             }
         """)
@@ -383,7 +383,7 @@ class NoteEditorWidget(QWidget):
         self._body_edit = _IMETextEdit()
         self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._body_edit.setStyleSheet("""
-            QTextEdit { font-size: 13px; color: #202124; border: none; background: transparent; }
+            QTextEdit { font-size: 13px; color: #1c1c1e; border: none; background: transparent; }
         """)
         self._body_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         bl.addWidget(self._body_edit, 1)
@@ -406,7 +406,7 @@ class NoteEditorWidget(QWidget):
         # 이미지 섹션
         self._img_section = QFrame()
         self._img_section.setStyleSheet(
-            "QFrame { background: #f8f9fa; border: 1px solid #e8eaed; border-radius: 8px; }"
+            "QFrame { background: #f5f5f7; border: 1px solid #d1d1d6; border-radius: 10px; }"
         )
         img_l = QVBoxLayout(self._img_section)
         img_l.setContentsMargins(8, 8, 8, 8)
@@ -415,17 +415,17 @@ class NoteEditorWidget(QWidget):
         self._img_display = QLabel()
         self._img_display.setFixedHeight(140)
         self._img_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._img_display.setStyleSheet("background: #e8eaed; border-radius: 6px;")
+        self._img_display.setStyleSheet("background: #e5e5ea; border-radius: 8px;")
         img_l.addWidget(self._img_display)
 
         img_del_btn = QPushButton(_("🗑  Delete Image"))
         img_del_btn.setStyleSheet("""
             QPushButton {
-                background: transparent; color: #c5221f;
-                border: 1px solid #c5221f; border-radius: 6px;
+                background: transparent; color: #FF3B30;
+                border: 1px solid #FF3B30; border-radius: 8px;
                 font-size: 12px; padding: 4px 10px;
             }
-            QPushButton:hover { background: #fce8e6; }
+            QPushButton:hover { background: rgba(255,59,48,0.08); }
         """)
         img_del_btn.clicked.connect(self._on_delete_image)
         img_l.addWidget(img_del_btn, 0, Qt.AlignmentFlag.AlignRight)
@@ -436,7 +436,7 @@ class NoteEditorWidget(QWidget):
         # 링크 섹션
         self._links_section = QFrame()
         self._links_section.setStyleSheet(
-            "QFrame { background: #f8f9fa; border: 1px solid #e8eaed; border-radius: 8px; }"
+            "QFrame { background: #f5f5f7; border: 1px solid #d1d1d6; border-radius: 10px; }"
         )
         links_l = QVBoxLayout(self._links_section)
         links_l.setContentsMargins(10, 8, 10, 8)
@@ -444,7 +444,7 @@ class NoteEditorWidget(QWidget):
 
         links_header = QLabel(_("🔗 Links"))
         links_header.setStyleSheet(
-            "font-size: 11px; font-weight: 600; color: #5f6368; background: transparent;"
+            "font-size: 11px; font-weight: 600; color: #636366; background: transparent;"
         )
         links_l.addWidget(links_header)
 
@@ -461,7 +461,7 @@ class NoteEditorWidget(QWidget):
         self._footer_widget = QWidget()
         footer = self._footer_widget
         footer.setFixedHeight(64)
-        footer.setStyleSheet("background: white; border-top: 1px solid #e8eaed;")
+        footer.setStyleSheet("background: #f5f5f7; border-top: 1px solid #d1d1d6;")
         fl = QHBoxLayout(footer)
         fl.setContentsMargins(12, 8, 12, 8)
         fl.setSpacing(8)
@@ -498,12 +498,12 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.setToolTip(_("Delete"))
         self._delete_btn.setStyleSheet("""
             QPushButton {
-                background: transparent; color: #c5221f;
-                border: 1.5px solid #c5221f; border-radius: 8px;
+                background: transparent; color: #FF3B30;
+                border: 1.5px solid #FF3B30; border-radius: 8px;
                 font-size: 15px; font-weight: 600;
             }
-            QPushButton:hover { background: #fce8e6; }
-            QPushButton:pressed { background: #f5c6c5; }
+            QPushButton:hover { background: rgba(255,59,48,0.08); }
+            QPushButton:pressed { background: rgba(255,59,48,0.16); }
         """)
         self._delete_btn.clicked.connect(self._on_delete)
         fl.addWidget(self._delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -513,11 +513,11 @@ class NoteEditorWidget(QWidget):
         self._copy_btn.setToolTip(_("Copy to clipboard"))
         self._copy_btn.setStyleSheet("""
             QPushButton {
-                background: transparent; color: #5f6368;
-                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
             }
-            QPushButton:hover { background: #f1f3f4; }
-            QPushButton:pressed { background: #e8eaed; }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
         """)
         self._copy_btn.clicked.connect(self._on_copy_to_clipboard)
         fl.addWidget(self._copy_btn, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -531,11 +531,11 @@ class NoteEditorWidget(QWidget):
         self._export_btn.setToolTip(_("Export / Share"))
         self._export_btn.setStyleSheet("""
             QPushButton {
-                background: transparent; color: #5f6368;
-                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
             }
-            QPushButton:hover { background: #f1f3f4; }
-            QPushButton:pressed { background: #e8eaed; }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
         """)
         self._export_btn.clicked.connect(self._on_export_click)
         fl.addWidget(self._export_btn, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -546,11 +546,11 @@ class NoteEditorWidget(QWidget):
         self._revert_btn.setVisible(False)
         self._revert_btn.setStyleSheet("""
             QPushButton {
-                background: transparent; color: #5f6368;
-                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
             }
-            QPushButton:hover { background: #f1f3f4; }
-            QPushButton:pressed { background: #e8eaed; }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
         """)
         self._revert_btn.clicked.connect(self._on_revert)
         fl.addWidget(self._revert_btn, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -648,7 +648,7 @@ class NoteEditorWidget(QWidget):
             rl.addWidget(cb)
 
             lbl = QLabel(ci.text)
-            lbl.setStyleSheet("font-size: 13px; color: #202124; background: transparent;")
+            lbl.setStyleSheet("font-size: 13px; color: #1c1c1e; background: transparent;")
             lbl.setWordWrap(True)
             rl.addWidget(lbl, 1)
 
@@ -693,7 +693,7 @@ class NoteEditorWidget(QWidget):
 
         for url in urls:
             display = short_url(url, 45)
-            lbl = QLabel(f'<a href="{url}" style="color:#1a73e8;">{display}</a>')
+            lbl = QLabel(f'<a href="{url}" style="color:#007AFF;">{display}</a>')
             lbl.setOpenExternalLinks(True)
             lbl.setWordWrap(True)
             lbl.setStyleSheet("font-size: 12px; background: transparent;")
@@ -770,18 +770,18 @@ class NoteEditorWidget(QWidget):
         if self._is_pinned:
             self._pin_btn.setStyleSheet("""
                 QPushButton {
-                    background: #e8f0fe; border: 1.5px solid #1a73e8;
+                    background: rgba(0,122,255,0.10); border: 1.5px solid #007AFF;
                     border-radius: 8px; font-size: 15px;
                 }
-                QPushButton:hover { background: #d2e3fc; }
+                QPushButton:hover { background: rgba(0,122,255,0.18); }
             """)
         else:
             self._pin_btn.setStyleSheet("""
                 QPushButton {
-                    background: transparent; border: 1px solid #dadce0;
-                    border-radius: 8px; font-size: 15px; color: #9aa0a6;
+                    background: transparent; border: 1px solid #d1d1d6;
+                    border-radius: 8px; font-size: 15px; color: #8e8e93;
                 }
-                QPushButton:hover { background: #f1f3f4; border-color: #9aa0a6; }
+                QPushButton:hover { background: #f2f2f7; border-color: #8e8e93; }
             """)
 
     def _on_color_pick(self, color: NoteColor):
@@ -797,7 +797,7 @@ class NoteEditorWidget(QWidget):
             hex_color = COLOR_HEX[color]
             is_selected = (color == self._current_color)
             check = "✓" if is_selected else ""
-            border = "2px solid #202124" if is_selected else "1px solid rgba(0,0,0,0.2)"
+            border = "2px solid #1c1c1e" if is_selected else "1px solid rgba(0,0,0,0.18)"
             btn.setText(check)
             btn.setStyleSheet(f"""
                 QPushButton {{
@@ -805,16 +805,16 @@ class NoteEditorWidget(QWidget):
                     border: {border};
                     border-radius: 11px;
                     font-size: 11px;
-                    color: #202124;
+                    color: #1c1c1e;
                 }}
-                QPushButton:hover {{ border: 2px solid rgba(0,0,0,0.4); }}
+                QPushButton:hover {{ border: 2px solid rgba(0,0,0,0.36); }}
             """)
 
     def _apply_bg(self, color: NoteColor):
         hex_color = COLOR_HEX[color]
         self._body_widget.setStyleSheet(f"background: {hex_color};")
         self._footer_widget.setStyleSheet(
-            f"background: {hex_color}; border-top: 1px solid #e8eaed;"
+            f"background: {hex_color}; border-top: 1px solid #d1d1d6;"
         )
 
     def _on_save(self):
@@ -872,12 +872,12 @@ class NoteEditorWidget(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
-                background: white; border: 1px solid #dadce0;
+                background: white; border: 1px solid #d1d1d6;
                 border-radius: 8px; padding: 4px; font-size: 12px;
             }
             QMenu::item { padding: 6px 16px; border-radius: 4px; }
-            QMenu::item:selected { background: #f1f3f4; color: #202124; }
-            QMenu::separator { height: 1px; background: #e8eaed; margin: 4px 8px; }
+            QMenu::item:selected { background: #f2f2f7; color: #1c1c1e; }
+            QMenu::separator { height: 1px; background: #d1d1d6; margin: 4px 8px; }
             QMenu::right-arrow { image: none; width: 8px; }
         """)
 

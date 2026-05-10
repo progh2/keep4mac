@@ -58,13 +58,13 @@ class NoteListWidget(QWidget):
         self._search.textChanged.connect(self._filter)
         self._search.setStyleSheet("""
             QLineEdit {
-                border: 1px solid #dadce0;
+                border: 1px solid #d1d1d6;
                 border-radius: 18px;
                 padding: 6px 16px;
                 font-size: 13px;
-                background: #f1f3f4;
+                background: #f2f2f7;
             }
-            QLineEdit:focus { background: #fff; border-color: #1a73e8; }
+            QLineEdit:focus { background: #fff; border-color: #007AFF; }
         """)
         outer.addWidget(self._search)
         outer.addSpacing(8)
@@ -154,7 +154,7 @@ class NoteListWidget(QWidget):
         if not notes:
             lbl = QLabel(_("No notes"))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("color: #9aa0a6; font-size: 13px; padding: 40px;")
+            lbl.setStyleSheet("color: #8e8e93; font-size: 13px; padding: 40px;")
             self._list_layout.insertWidget(0, lbl)
             return
 
@@ -180,6 +180,6 @@ class NoteListWidget(QWidget):
     def _section_header(self, text: str) -> QLabel:
         lbl = QLabel(text)
         lbl.setStyleSheet(
-            "font-size: 11px; font-weight: bold; color: #9aa0a6; padding: 6px 2px 2px 2px;"
+            "font-size: 11px; font-weight: bold; color: #8e8e93; padding: 6px 2px 2px 2px;"
         )
         return lbl
