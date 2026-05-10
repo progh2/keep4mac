@@ -2,11 +2,13 @@ import ctypes
 from typing import Callable
 
 import objc
-from PyQt6.QtCore import Qt, QRectF, QUrl
+from PyQt6.QtCore import Qt, QRectF, QTimer, QUrl
 from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPainterPath, QPen, QScreen
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QStackedWidget, QWidget
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from keep4mac.api.keep_client import KeepClient
+from keep4mac.i18n import gettext as _
+import keep4mac.i18n as i18n
 from keep4mac.ui.about_dialog import AboutDialog
 from keep4mac.ui.login_widget import LoginWidget
 from keep4mac.ui.note_editor_widget import NoteEditorWidget
@@ -49,6 +51,7 @@ class MainPanel(QWidget):
         self._sidebar.about_requested.connect(self._on_about)
         self._sidebar.logout_requested.connect(self._on_logout)
         self._sidebar.quit_requested.connect(self._on_quit)
+        self._sidebar.lang_changed.connect(self._on_lang_changed)
         self._sidebar.hide()
         root.addWidget(self._sidebar)
 
@@ -154,6 +157,38 @@ class MainPanel(QWidget):
         self._client.logout()
         self._sidebar.hide()
         self._stack.setCurrentIndex(_IDX_LOGIN)
+
+    def _on_lang_changed(self, lang: str):
+        lang_name = i18n.SUPPORTED_LANGS.get(lang, lang)
+        self._show_toast(_("Language changed. Restart to apply.").replace(
+            "Language changed. Restart to apply.",
+            f"{lang_name}(으)로 변경됐습니다. 앱을 재시작하면 적용됩니다."
+            if lang == "ko" else
+            f"Language changed to {lang_name}. Restart to apply."
+        ))
+
+    def _show_toast(self, message: str):
+        toast = QLabel(message, self)
+        toast.setWordWrap(True)
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet("""
+            QLabel {
+                background: rgba(32,33,36,0.88);
+                color: white;
+                font-size: 12px;
+                border-radius: 8px;
+                padding: 10px 14px;
+            }
+        """)
+        toast.adjustSize()
+        toast.setFixedWidth(min(toast.sizeHint().width() + 24, self.width() - 32))
+        toast.move(
+            (self.width() - toast.width()) // 2,
+            self.height() - toast.height() - 16,
+        )
+        toast.show()
+        toast.raise_()
+        QTimer.singleShot(3000, toast.deleteLater)
 
     def _on_quit(self):
         self.hide()

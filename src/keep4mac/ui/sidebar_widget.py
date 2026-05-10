@@ -1,7 +1,8 @@
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QMenu, QPushButton, QVBoxLayout, QWidget
 
 from keep4mac.core import autostart
+import keep4mac.i18n as i18n
 from keep4mac.i18n import gettext as _
 
 _BTN_CSS = """
@@ -44,6 +45,7 @@ class SidebarWidget(QWidget):
     about_requested = pyqtSignal()
     logout_requested = pyqtSignal()
     quit_requested = pyqtSignal()
+    lang_changed = pyqtSignal(str)  # lang code
 
     def __init__(self):
         super().__init__()
@@ -72,6 +74,11 @@ class SidebarWidget(QWidget):
         layout.addWidget(self._autostart_btn)
         self._refresh_autostart_btn()
 
+        self._lang_btn = self._make_btn("🌏", _("Language"), None)
+        self._lang_btn.clicked.disconnect()
+        self._lang_btn.clicked.connect(self._on_lang_click)
+        layout.addWidget(self._lang_btn)
+
         for icon, label, signal in [
             ("?", _("About"), self.about_requested),
             ("↩", _("Logout"), self.logout_requested),
@@ -94,6 +101,39 @@ class SidebarWidget(QWidget):
     def _on_autostart_toggle(self):
         autostart.toggle()
         self._refresh_autostart_btn()
+
+    def _on_lang_click(self):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background: white;
+                border: 1px solid #dadce0;
+                border-radius: 8px;
+                padding: 4px;
+                font-size: 12px;
+            }
+            QMenu::item {
+                padding: 6px 16px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected { background: #f1f3f4; color: #202124; }
+            QMenu::item:disabled { color: #1a73e8; font-weight: 600; }
+        """)
+
+        current = i18n.current_lang()
+        for code, name in i18n.SUPPORTED_LANGS.items():
+            label = f"✓ {name}" if code == current else f"   {name}"
+            action = menu.addAction(label)
+            action.setData(code)
+            if code == current:
+                action.setEnabled(False)
+
+        pos = self._lang_btn.mapToGlobal(self._lang_btn.rect().topRight())
+        action = menu.exec(pos)
+        if action and action.isEnabled():
+            lang = action.data()
+            i18n.save_lang(lang)
+            self.lang_changed.emit(lang)
 
     def _make_btn(self, icon: str, label: str, signal) -> QPushButton:
         btn = QPushButton(f"{icon}\n{label}")

@@ -100,3 +100,6 @@ msgstr "만든 이"
 
 msgid "Close"
 msgstr "닫기"
+
+msgid "Language"
+msgstr "언어"

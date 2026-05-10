@@ -1,10 +1,19 @@
 """gettext 기반 다국어 지원 모듈."""
 import gettext as _gettext
+import json
 import locale
 import sys
 from pathlib import Path
 
 _translation: _gettext.NullTranslations | None = None
+
+_SETTINGS_PATH = Path.home() / ".config" / "keep4mac" / "settings.json"
+
+SUPPORTED_LANGS: dict[str, str] = {
+    "ko": "한국어",
+    "en": "English",
+    "ja": "日本語",
+}
 
 
 def _localedir() -> Path:
@@ -13,10 +22,37 @@ def _localedir() -> Path:
     return Path(__file__).parents[2] / "i18n"
 
 
+def _load_settings() -> dict:
+    try:
+        return json.loads(_SETTINGS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_settings(data: dict) -> None:
+    _SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _SETTINGS_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def current_lang() -> str:
+    """현재 적용된 언어 코드 반환."""
+    settings = _load_settings()
+    if "lang" in settings:
+        return settings["lang"]
+    return (locale.getdefaultlocale()[0] or "en_US").split("_")[0]
+
+
+def save_lang(lang: str) -> None:
+    """선택한 언어를 설정 파일에 저장."""
+    settings = _load_settings()
+    settings["lang"] = lang
+    _save_settings(settings)
+
+
 def setup() -> None:
-    """앱 시작 시 한 번 호출. 시스템 언어를 감지해 번역을 설치한다."""
+    """앱 시작 시 한 번 호출. 설정 파일 → 시스템 언어 순으로 감지해 번역을 설치한다."""
     global _translation
-    lang = (locale.getdefaultlocale()[0] or "en_US").split("_")[0]
+    lang = current_lang()
     try:
         _translation = _gettext.translation(
             "keep4mac",

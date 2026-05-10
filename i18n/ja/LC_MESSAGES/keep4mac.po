@@ -100,3 +100,6 @@ msgstr "制作者"
 
 msgid "Close"
 msgstr "閉じる"
+
+msgid "Language"
+msgstr "言語"
