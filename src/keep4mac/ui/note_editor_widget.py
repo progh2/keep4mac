@@ -116,6 +116,117 @@ def _write_hwpx(path: str, title: str, body: str,
 
     doc.save_to_path(path)
 
+    if img_data:
+        _inject_hwpx_image(path, img_data)
+
+
+def _inject_hwpx_image(path: str, img_data: bytes) -> None:
+    """python-hwpx가 생성한 HWPX ZIP에 이미지 단락을 직접 주입한다."""
+    import os, random, zipfile
+    from PyQt6.QtGui import QImage
+
+    qi = QImage()
+    qi.loadFromData(img_data)
+    w_px, h_px = max(1, qi.width()), max(1, qi.height())
+    org_w, org_h = w_px * 75, h_px * 75   # 1px = 75 HWP unit (96dpi)
+    MAX_W = 42520                           # A4 콘텐츠 폭
+    if org_w > MAX_W:
+        cur_h = int(org_h * MAX_W / org_w)
+        cur_w = MAX_W
+    else:
+        cur_w, cur_h = org_w, org_h
+
+    sc_x = round(cur_w / org_w, 6)
+    sc_y = round(cur_h / org_h, 6)
+    cx, cy = cur_w // 2, cur_h // 2
+    instid = random.randint(10_000_000, 99_999_999)
+    pic_id = random.randint(1_000_000_000, 2_000_000_000)
+    bin_id = "image1"
+
+    img_para = (
+        f'<hp:p id="{pic_id}" paraPrIDRef="0" styleIDRef="0"'
+        f' pageBreak="0" columnBreak="0" merged="0">'
+        f'<hp:run charPrIDRef="0">'
+        f'<hp:pic id="{pic_id}" zOrder="0" numberingType="PICTURE"'
+        f' textWrap="SQUARE" textFlow="BOTH_SIDES" lock="0"'
+        f' dropcapstyle="None" href="" groupLevel="0" instid="{instid}" reverse="0">'
+        f'<hp:offset x="0" y="0"/>'
+        f'<hp:orgSz width="{org_w}" height="{org_h}"/>'
+        f'<hp:curSz width="{cur_w}" height="{cur_h}"/>'
+        f'<hp:flip horizontal="0" vertical="0"/>'
+        f'<hp:rotationInfo angle="0" centerX="{cx}" centerY="{cy}" rotateimage="1"/>'
+        f'<hp:renderingInfo>'
+        f'<hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/>'
+        f'<hc:scaMatrix e1="{sc_x}" e2="0" e3="0" e4="0" e5="{sc_y}" e6="0"/>'
+        f'<hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/>'
+        f'</hp:renderingInfo>'
+        f'<hc:img binaryItemIDRef="{bin_id}" bright="0" contrast="0"'
+        f' effect="REAL_PIC" alpha="0"/>'
+        f'<hp:imgRect>'
+        f'<hc:pt0 x="0" y="0"/>'
+        f'<hc:pt1 x="{org_w}" y="0"/>'
+        f'<hc:pt2 x="{org_w}" y="{org_h}"/>'
+        f'<hc:pt3 x="0" y="{org_h}"/>'
+        f'</hp:imgRect>'
+        f'<hp:imgClip left="0" right="{org_w}" top="0" bottom="{org_h}"/>'
+        f'<hp:inMargin left="0" right="0" top="0" bottom="0"/>'
+        f'<hp:imgDim dimwidth="{org_w}" dimheight="{org_h}"/>'
+        f'<hp:effects/>'
+        f'<hp:sz width="{cur_w}" widthRelTo="ABSOLUTE"'
+        f' height="{cur_h}" heightRelTo="ABSOLUTE" protect="0"/>'
+        f'<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="1"'
+        f' allowOverlap="0" holdAnchorAndSO="0"'
+        f' vertRelTo="PARA" horzRelTo="PARA"'
+        f' vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>'
+        f'<hp:outMargin left="0" right="0" top="0" bottom="0"/>'
+        f'<hp:shapeComment/>'
+        f'</hp:pic>'
+        f'</hp:run>'
+        f'<hp:linesegarray>'
+        f'<hp:lineseg textpos="0" vertpos="0" vertsize="1000" textheight="1000"'
+        f' baseline="850" spacing="600" horzpos="0" horzsize="{MAX_W}" flags="393216"/>'
+        f'</hp:linesegarray>'
+        f'</hp:p>'
+    )
+
+    with zipfile.ZipFile(path, 'r') as zin:
+        names = zin.namelist()
+        files = {n: zin.read(n) for n in names}
+
+    files[f'BinData/{bin_id}.png'] = img_data
+
+    # 매니페스트에 이미지 항목 추가
+    hpf = files['Contents/content.hpf'].decode('utf-8')
+    item_xml = (
+        f'<opf:item id="{bin_id}" href="BinData/{bin_id}.png"'
+        f' media-type="image/png" isEmbeded="1"/>'
+    )
+    hpf = hpf.replace('</opf:manifest>', item_xml + '</opf:manifest>')
+    files['Contents/content.hpf'] = hpf.encode('utf-8')
+
+    # section0.xml에 hc: 네임스페이스 없으면 추가
+    sec = files['Contents/section0.xml'].decode('utf-8')
+    if 'xmlns:hc=' not in sec:
+        HC = 'xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core"'
+        sec = sec.replace('<hs:sec ', f'<hs:sec {HC} ', 1)
+
+    # 첫 번째 </hp:p> 뒤에 이미지 단락 삽입
+    pos = sec.find('</hp:p>')
+    if pos != -1:
+        insert_at = pos + len('</hp:p>')
+        sec = sec[:insert_at] + img_para + sec[insert_at:]
+    files['Contents/section0.xml'] = sec.encode('utf-8')
+
+    # ZIP 재기록 (mimetype은 첫 번째, 비압축)
+    tmp = path + '.tmp'
+    with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+        mime_info = zipfile.ZipInfo('mimetype')
+        mime_info.compress_type = zipfile.ZIP_STORED
+        zout.writestr(mime_info, files.pop('mimetype', b'application/hwp+zip'))
+        for name, data in files.items():
+            zout.writestr(name, data)
+    os.replace(tmp, path)
+
 
 def _write_docx(path: str, title: str, body: str,
                 checklist: "list[tuple[bool, str]] | None" = None,
