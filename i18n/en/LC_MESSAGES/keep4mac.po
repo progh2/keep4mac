@@ -152,8 +152,5 @@ msgstr ""
 msgid "Save as File"
 msgstr ""
 
-msgid "Unsaved Changes"
-msgstr ""
-
-msgid "You have unsaved changes.\nSave before leaving?"
+msgid "Revert"
 msgstr ""

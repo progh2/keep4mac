@@ -112,6 +112,8 @@ class MainPanel(QWidget):
         self.move(x, y)
 
         if self._client.is_logged_in:
+            if self._stack.currentIndex() == _IDX_EDITOR:
+                self._editor_w.auto_save_if_needed()
             self._show_notes()
         else:
             self._sidebar.hide()

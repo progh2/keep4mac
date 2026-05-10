@@ -309,7 +309,10 @@ class NoteEditorWidget(QWidget):
         self._translate_thread: _TranslateThread | None = None
         self._orig_title: str = ""
         self._orig_body: str = ""
+        self._revert_btn: QPushButton | None = None
         self._build_ui()
+        self._title_edit.textChanged.connect(self._update_revert_btn)
+        self._body_edit.textChanged.connect(self._update_revert_btn)
 
     # ── UI 구성 ───────────────────────────────────────────────
 
@@ -509,6 +512,21 @@ class NoteEditorWidget(QWidget):
         self._export_btn.clicked.connect(self._on_export_click)
         fl.addWidget(self._export_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        self._revert_btn = QPushButton("↩")
+        self._revert_btn.setFixedSize(32, 32)
+        self._revert_btn.setToolTip(_("Revert"))
+        self._revert_btn.setVisible(False)
+        self._revert_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #5f6368;
+                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f1f3f4; }
+            QPushButton:pressed { background: #e8eaed; }
+        """)
+        self._revert_btn.clicked.connect(self._on_revert)
+        fl.addWidget(self._revert_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         self._save_btn = QPushButton(_("Save"))
         self._save_btn.setMinimumWidth(80)
         self._save_btn.setStyleSheet("""
@@ -533,6 +551,7 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.setToolTip(_("Delete"))
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._export_btn.setToolTip(_("Export / Share"))
+        self._revert_btn.setToolTip(_("Revert"))
         self._save_btn.setText(_("Save"))
         if self._is_new:
             self._header_label.setText(_("New Note"))
@@ -550,6 +569,7 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.show()
         self._populate(note)
         self._orig_title, self._orig_body = self._note_content()
+        self._update_revert_btn()
 
     def new_note(self):
         self._note_id = None
@@ -569,6 +589,7 @@ class NoteEditorWidget(QWidget):
         self._refresh_pin_btn()
         self._orig_title = ""
         self._orig_body = ""
+        self._update_revert_btn()
         self._title_edit.setFocus()
 
     # ── 내부 ──────────────────────────────────────────────────
@@ -672,22 +693,53 @@ class NoteEditorWidget(QWidget):
         title, body = self._note_content()
         return title != self._orig_title or body != self._orig_body
 
+    def _update_revert_btn(self, *_):
+        if self._revert_btn:
+            self._revert_btn.setVisible(self._has_unsaved_changes())
+
+    def _on_revert(self):
+        self._title_edit.setText(self._orig_title)
+        if self._list_scroll.isVisible() and self._note_id:
+            note = self._client.get_note(self._note_id)
+            if note:
+                self._rebuild_checklist(note)
+        else:
+            self._body_edit.setPlainText(self._orig_body)
+        self._update_revert_btn()
+
+    def _do_save(self) -> bool:
+        """저장만 수행한다. back_requested는 emit하지 않는다."""
+        QGuiApplication.inputMethod().commit()
+        title = self._title_edit.text().strip()
+        body = self._body_edit.toPlainText()
+        color = self._current_color
+
+        if self._is_new:
+            if not title and not body.strip():
+                return False
+            note = self._client.create_note(title, body, color, self._is_pinned)
+            self._is_new = False
+            self._note_id = note.id
+            self._delete_btn.show()
+        elif self._note_id:
+            if self._list_scroll.isVisible():
+                items = [(text, cb.isChecked()) for cb, text in self._checklist_rows]
+                self._client.update_checklist(self._note_id, title, items, color)
+            else:
+                self._client.update_note(self._note_id, title, body, color)
+
+        self._orig_title, self._orig_body = self._note_content()
+        self._update_revert_btn()
+        return True
+
+    def auto_save_if_needed(self):
+        """패널이 재표시되기 직전 호출 — 편집 중인 내용을 자동 저장한다."""
+        if self._has_unsaved_changes():
+            self._do_save()
+
     def _on_back(self):
         if self._has_unsaved_changes():
-            from PyQt6.QtWidgets import QMessageBox
-            ret = QMessageBox.question(
-                self,
-                _("Unsaved Changes"),
-                _("You have unsaved changes.\nSave before leaving?"),
-                QMessageBox.StandardButton.Save
-                | QMessageBox.StandardButton.Discard
-                | QMessageBox.StandardButton.Cancel,
-            )
-            if ret == QMessageBox.StandardButton.Save:
-                self._on_save()
-                return
-            elif ret == QMessageBox.StandardButton.Cancel:
-                return
+            self._do_save()
         self.back_requested.emit()
 
     def _on_pin_toggle(self):
@@ -752,18 +804,7 @@ class NoteEditorWidget(QWidget):
         )
 
     def _on_save(self):
-        # 한글 등 IME 조합 중인 마지막 글자를 강제 확정 후 읽기
-        QGuiApplication.inputMethod().commit()
-        title = self._title_edit.text().strip()
-        color = self._current_color
-        if self._is_new:
-            self._client.create_note(title, self._body_edit.toPlainText(), color, self._is_pinned)
-        elif self._note_id:
-            if self._list_scroll.isVisible():
-                items = [(text, cb.isChecked()) for cb, text in self._checklist_rows]
-                self._client.update_checklist(self._note_id, title, items, color)
-            else:
-                self._client.update_note(self._note_id, title, self._body_edit.toPlainText(), color)
+        self._do_save()
         self.back_requested.emit()
 
     def _on_delete(self):

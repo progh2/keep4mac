@@ -152,8 +152,5 @@ msgstr "노트 생성 실패"
 msgid "Save as File"
 msgstr "파일로 저장"
 
-msgid "Unsaved Changes"
-msgstr "저장되지 않은 변경사항"
-
-msgid "You have unsaved changes.\nSave before leaving?"
-msgstr "저장되지 않은 변경사항이 있습니다.\n저장하고 나가시겠습니까?"
+msgid "Revert"
+msgstr "되돌리기"
