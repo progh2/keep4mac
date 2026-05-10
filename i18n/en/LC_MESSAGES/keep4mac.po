@@ -104,6 +104,9 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
+msgid "Settings"
+msgstr ""
+
 msgid "Delete Note"
 msgstr ""
 

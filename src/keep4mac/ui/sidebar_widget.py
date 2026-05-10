@@ -26,17 +26,22 @@ _BTN_CSS = """
     }}
 """
 
-_AUTOSTART_ON_CSS = """
-    QPushButton {
-        background: #e8f0fe;
-        border: none;
-        color: #1a73e8;
-        font-size: 10px;
-        padding: 4px 2px;
-        border-radius: 6px;
+_MENU_CSS = """
+    QMenu {
+        background: white;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 4px;
+        font-size: 12px;
     }
-    QPushButton:hover { background: #d2e3fc; }
-    QPushButton:pressed { background: #c5d9fb; }
+    QMenu::item {
+        padding: 6px 16px;
+        border-radius: 4px;
+    }
+    QMenu::item:selected { background: #f1f3f4; color: #202124; }
+    QMenu::item:disabled { color: #1a73e8; font-weight: 600; }
+    QMenu::separator { height: 1px; background: #e8eaed; margin: 4px 8px; }
+    QMenu::right-arrow { image: none; width: 8px; }
 """
 
 
@@ -61,97 +66,79 @@ class SidebarWidget(QWidget):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        self._new_note_btn = self._make_btn("🗒", _("New Note"), self.new_note_requested)
-        self._sync_btn     = self._make_btn("↻",  _("Sync"),     self.sync_requested)
-        self._web_btn      = self._make_btn("🌐", _("Web Keep"), self.open_web_requested)
+        self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
+        self._sync_btn      = self._make_btn("↻",  _("Sync"),     self.sync_requested)
+        self._settings_btn  = self._make_btn("⚙",  _("Settings"), None)
+        self._settings_btn.clicked.connect(self._on_settings_click)
 
-        for btn in (self._new_note_btn, self._sync_btn, self._web_btn):
+        for btn in (self._new_note_btn, self._sync_btn, self._settings_btn):
             layout.addWidget(btn)
 
         layout.addStretch()
 
-        self._autostart_btn = QPushButton()
-        self._autostart_btn.setFixedWidth(52)
-        self._autostart_btn.setMinimumHeight(50)
-        self._autostart_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-        self._autostart_btn.clicked.connect(self._on_autostart_toggle)
-        layout.addWidget(self._autostart_btn)
-        self._refresh_autostart_btn()
-
-        self._lang_btn = self._make_btn("🌏", _("Language"), None)
-        self._lang_btn.clicked.connect(self._on_lang_click)
-        layout.addWidget(self._lang_btn)
-
-        self._about_btn  = self._make_btn("?",  _("About"),   self.about_requested)
-        self._logout_btn = self._make_btn("↩",  _("Logout"),  self.logout_requested)
-        self._quit_btn   = self._make_btn("✕",  _("Quit"),    self.quit_requested)
-
-        for btn in (self._about_btn, self._logout_btn, self._quit_btn):
-            layout.addWidget(btn)
+        self._quit_btn = self._make_btn("✕", _("Quit"), self.quit_requested)
+        layout.addWidget(self._quit_btn)
 
     def retranslate_ui(self):
-        """언어 변경 후 모든 버튼 텍스트를 즉시 갱신한다."""
+        """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""
         self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
         self._sync_btn.setText(f"↻\n{self._wrap_label(_('Sync'))}")
-        self._web_btn.setText(f"🌐\n{self._wrap_label(_('Web Keep'))}")
-        self._lang_btn.setText(f"🌏\n{self._wrap_label(_('Language'))}")
-        self._about_btn.setText(f"?\n{self._wrap_label(_('About'))}")
-        self._logout_btn.setText(f"↩\n{self._wrap_label(_('Logout'))}")
+        self._settings_btn.setText(f"⚙\n{self._wrap_label(_('Settings'))}")
         self._quit_btn.setText(f"✕\n{self._wrap_label(_('Quit'))}")
-        self._refresh_autostart_btn()
 
-    def _refresh_autostart_btn(self):
-        enabled = autostart.is_enabled()
-        full_text = _("🚀\nAutostart")
-        parts = full_text.split('\n', 1)
-        icon = parts[0]
-        label = self._wrap_label(parts[1]) if len(parts) > 1 else ''
-        self._autostart_btn.setText(f"{icon}\n{label}")
-        self._autostart_btn.setStyleSheet(
-            _AUTOSTART_ON_CSS if enabled else _BTN_CSS.format()
-        )
-        self._autostart_btn.setToolTip(
-            _("Autostart enabled (click to disable)")
-            if enabled else
-            _("Start at login (click to enable)")
-        )
+    # ── 설정 메뉴 ─────────────────────────────────────────────
+
+    def _on_settings_click(self):
+        menu = QMenu(self)
+        menu.setStyleSheet(_MENU_CSS)
+
+        # 웹 Keep
+        web_act = menu.addAction(f"🌐  {_('Web Keep')}")
+        web_act.triggered.connect(lambda: self.open_web_requested.emit())
+
+        # 자동시작 토글
+        autostart_act = menu.addAction(f"🚀  {_('Autostart')}")
+        autostart_act.setCheckable(True)
+        autostart_act.setChecked(autostart.is_enabled())
+        autostart_act.triggered.connect(self._on_autostart_toggle)
+
+        menu.addSeparator()
+
+        # 언어 변경 서브메뉴
+        lang_menu = menu.addMenu(f"🌏  {_('Language')}")
+        lang_menu.setStyleSheet(_MENU_CSS)
+        current = i18n.current_lang()
+        for code, name in i18n.SUPPORTED_LANGS.items():
+            label = f"✓  {name}" if code == current else f"    {name}"
+            act = lang_menu.addAction(label)
+            if code == current:
+                act.setEnabled(False)
+            else:
+                act.triggered.connect(
+                    lambda checked=False, c=code: self._on_lang_select(c)
+                )
+
+        menu.addSeparator()
+
+        # 정보
+        about_act = menu.addAction(f"❓  {_('About')}")
+        about_act.triggered.connect(lambda: self.about_requested.emit())
+
+        # 로그아웃
+        logout_act = menu.addAction(f"↩  {_('Logout')}")
+        logout_act.triggered.connect(lambda: self.logout_requested.emit())
+
+        pos = self._settings_btn.mapToGlobal(self._settings_btn.rect().topRight())
+        menu.exec(pos)
 
     def _on_autostart_toggle(self):
         autostart.toggle()
-        self._refresh_autostart_btn()
 
-    def _on_lang_click(self):
-        menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background: white;
-                border: 1px solid #dadce0;
-                border-radius: 8px;
-                padding: 4px;
-                font-size: 12px;
-            }
-            QMenu::item {
-                padding: 6px 16px;
-                border-radius: 4px;
-            }
-            QMenu::item:selected { background: #f1f3f4; color: #202124; }
-            QMenu::item:disabled { color: #1a73e8; font-weight: 600; }
-        """)
+    def _on_lang_select(self, code: str):
+        i18n.save_lang(code)
+        self.lang_changed.emit(code)
 
-        current = i18n.current_lang()
-        for code, name in i18n.SUPPORTED_LANGS.items():
-            label = f"✓ {name}" if code == current else f"   {name}"
-            action = menu.addAction(label)
-            action.setData(code)
-            if code == current:
-                action.setEnabled(False)
-
-        pos = self._lang_btn.mapToGlobal(self._lang_btn.rect().topRight())
-        action = menu.exec(pos)
-        if action and action.isEnabled():
-            lang = action.data()
-            i18n.save_lang(lang)
-            self.lang_changed.emit(lang)
+    # ── 공통 헬퍼 ─────────────────────────────────────────────
 
     @staticmethod
     def _wrap_label(label: str) -> str:

@@ -104,6 +104,9 @@ msgstr "닫기"
 msgid "Language"
 msgstr "언어"
 
+msgid "Settings"
+msgstr "설정"
+
 msgid "Delete Note"
 msgstr "노트 삭제"
 
