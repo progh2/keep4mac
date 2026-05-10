@@ -82,9 +82,13 @@ def _write_hwpx(path: str, title: str, body: str,
                 checklist: "list[tuple[bool, str]] | None" = None,
                 img_data: bytes | None = None) -> None:
     """python-hwpx(airmang) 라이브러리로 .hwpx 파일을 생성한다."""
+    import io, contextlib
     from hwpx import HwpxDocument
 
-    doc = HwpxDocument.new()
+    # 라이브러리가 Skeleton 로딩 시 출력하는 fallback 경고 억제
+    with contextlib.redirect_stderr(io.StringIO()):
+        doc = HwpxDocument.new()
+
     # 스켈레톤에 기본 빈 단락이 하나 있으므로 텍스트로 덮어쓰기
     first = True
 
@@ -97,11 +101,34 @@ def _write_hwpx(path: str, title: str, body: str,
             if style_id:
                 p.style_id_ref = str(style_id)
             first = False
-        else:
-            doc.add_paragraph(text, style_id_ref=style_id if style_id else None)
+            return p
+        return doc.add_paragraph(text, style_id_ref=style_id if style_id else None)
 
     if title:
         _add(title, style_id=2)  # 개요 1 스타일 (큰 제목)
+
+    # 이미지 삽입 (A4 콘텐츠 폭 기준 스케일)
+    if img_data:
+        try:
+            qi = QImage()
+            qi.loadFromData(img_data)
+            MAX_W = 42520  # A4 콘텐츠 폭(HWP 유닛, 1 unit = 1/7200 inch)
+            iw = int(qi.width() * 75)   # 96dpi → HWP 유닛 (×75)
+            ih = int(qi.height() * 75)
+            if iw > MAX_W:
+                ih = int(ih * MAX_W / iw)
+                iw = MAX_W
+            item_id = doc.add_image(img_data, "png")
+            img_para = _add("")
+            if img_para is not None:
+                img_para.add_shape("pic", {
+                    "binaryItemIDRef": item_id,
+                    "width": str(iw),
+                    "height": str(ih),
+                })
+        except Exception:
+            pass
+
     if checklist:
         for is_chk, txt in checklist:
             _add(f"{'☑' if is_chk else '☐'} {txt}")
