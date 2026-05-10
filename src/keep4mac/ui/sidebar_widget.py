@@ -118,6 +118,15 @@ class SidebarWidget(QWidget):
 
         menu.addSeparator()
 
+        # 내 메일 주소
+        from keep4mac.core import settings as _settings
+        my_email = _settings.get_my_email()
+        email_label = f"✉  {_('My Email')}  ({my_email})" if my_email else f"✉  {_('My Email')}"
+        my_email_act = menu.addAction(email_label)
+        my_email_act.triggered.connect(self._on_set_my_email)
+
+        menu.addSeparator()
+
         # 정보
         about_act = menu.addAction(f"❓  {_('About')}")
         about_act.triggered.connect(lambda: self.about_requested.emit())
@@ -137,6 +146,16 @@ class SidebarWidget(QWidget):
 
     def _on_autostart_toggle(self):
         autostart.toggle()
+
+    def _on_set_my_email(self):
+        from PyQt6.QtWidgets import QInputDialog
+        from keep4mac.core import settings as _settings
+        current = _settings.get_my_email()
+        text, ok = QInputDialog.getText(
+            self, _("My Email"), _("Enter your email address:"), text=current
+        )
+        if ok:
+            _settings.set_my_email(text.strip())
 
     def _on_lang_select(self, code: str):
         i18n.save_lang(code)

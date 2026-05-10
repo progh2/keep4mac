@@ -154,3 +154,15 @@ msgstr "파일로 저장"
 
 msgid "Revert"
 msgstr "되돌리기"
+
+msgid "Send to My Email"
+msgstr "내 메일로 보내기"
+
+msgid "Set your email in Settings first"
+msgstr "설정에서 내 메일 주소를 먼저 입력해 주세요"
+
+msgid "My Email"
+msgstr "내 메일 주소"
+
+msgid "Enter your email address:"
+msgstr "이메일 주소를 입력하세요:"

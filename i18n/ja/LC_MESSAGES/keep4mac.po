@@ -154,3 +154,15 @@ msgstr "ファイルとして保存"
 
 msgid "Revert"
 msgstr "元に戻す"
+
+msgid "Send to My Email"
+msgstr "マイメールへ送る"
+
+msgid "Set your email in Settings first"
+msgstr "設定でメールアドレスを先に入力してください"
+
+msgid "My Email"
+msgstr "マイメール"
+
+msgid "Enter your email address:"
+msgstr "メールアドレスを入力してください:"

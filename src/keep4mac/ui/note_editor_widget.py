@@ -893,6 +893,9 @@ class NoteEditorWidget(QWidget):
         email_act = menu.addAction(f"✉  {_('Send via Email')}")
         email_act.triggered.connect(self._on_email_share)
 
+        my_email_act = menu.addAction(f"📨  {_('Send to My Email')}")
+        my_email_act.triggered.connect(self._on_my_email_share)
+
         kakao_act = menu.addAction(f"💬  {_('Share via KakaoTalk')}")
         kakao_act.triggered.connect(self._on_kakao_share)
 
@@ -1074,8 +1077,21 @@ class NoteEditorWidget(QWidget):
     # ── #27 이메일 공유 ──────────────────────────────────────
 
     def _on_email_share(self):
+        from keep4mac.core import settings as _settings
         title, body = self._note_content()
-        url = QUrl(f"mailto:?subject={quote(title)}&body={quote(body)}")
+        subject = f"keep4mac - {title}" if title else "keep4mac"
+        url = QUrl(f"mailto:?subject={quote(subject)}&body={quote(body)}")
+        QDesktopServices.openUrl(url)
+
+    def _on_my_email_share(self):
+        from keep4mac.core import settings as _settings
+        to = _settings.get_my_email()
+        if not to:
+            self._show_export_toast(f"⚠  {_('Set your email in Settings first')}", duration=3000)
+            return
+        title, body = self._note_content()
+        subject = f"keep4mac - {title}" if title else "keep4mac"
+        url = QUrl(f"mailto:{quote(to)}?subject={quote(subject)}&body={quote(body)}")
         QDesktopServices.openUrl(url)
 
     # ── #26 카카오톡 공유 ────────────────────────────────────

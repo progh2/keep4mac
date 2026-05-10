@@ -154,3 +154,15 @@ msgstr ""
 
 msgid "Revert"
 msgstr ""
+
+msgid "Send to My Email"
+msgstr ""
+
+msgid "Set your email in Settings first"
+msgstr ""
+
+msgid "My Email"
+msgstr ""
+
+msgid "Enter your email address:"
+msgstr ""
