@@ -107,28 +107,6 @@ def _write_hwpx(path: str, title: str, body: str,
     if title:
         _add(title, style_id=2)  # 개요 1 스타일 (큰 제목)
 
-    # 이미지 삽입 (A4 콘텐츠 폭 기준 스케일)
-    if img_data:
-        try:
-            qi = QImage()
-            qi.loadFromData(img_data)
-            MAX_W = 42520  # A4 콘텐츠 폭(HWP 유닛, 1 unit = 1/7200 inch)
-            iw = int(qi.width() * 75)   # 96dpi → HWP 유닛 (×75)
-            ih = int(qi.height() * 75)
-            if iw > MAX_W:
-                ih = int(ih * MAX_W / iw)
-                iw = MAX_W
-            item_id = doc.add_image(img_data, "png")
-            img_para = _add("")
-            if img_para is not None:
-                img_para.add_shape("pic", {
-                    "binaryItemIDRef": item_id,
-                    "width": str(iw),
-                    "height": str(ih),
-                })
-        except Exception:
-            pass
-
     if checklist:
         for is_chk, txt in checklist:
             _add(f"{'☑' if is_chk else '☐'} {txt}")
