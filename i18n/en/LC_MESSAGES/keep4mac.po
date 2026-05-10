@@ -148,3 +148,6 @@ msgstr ""
 
 msgid "Failed to create note"
 msgstr ""
+
+msgid "Save as File"
+msgstr ""

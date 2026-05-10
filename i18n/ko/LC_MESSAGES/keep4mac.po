@@ -148,3 +148,6 @@ msgstr "노트 생성 중…"
 
 msgid "Failed to create note"
 msgstr "노트 생성 실패"
+
+msgid "Save as File"
+msgstr "파일로 저장"
