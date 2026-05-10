@@ -82,171 +82,162 @@ class _CreateNoteThread(QThread):
 def _write_hwpx(path: str, title: str, body: str,
                 checklist: "list[tuple[bool, str]] | None" = None,
                 img_data: bytes | None = None) -> None:
-    """ZIP+XML 방식으로 최소 유효 HWPX 파일을 생성한다."""
+    """OWPML(KS X 6101) 스펙 기반으로 .hwpx 파일을 생성한다."""
 
-    def _para(text: str, style_id: int = 0, char_pr: int = 0, pid: int = 1) -> str:
-        h = f"{pid:08X}"
-        safe = _he(text) if text.strip() else " "
-        return (f'    <hml:P ParaID="{h}" StyleIDRef="{style_id}">\n'
-                f'      <hml:RUN CharID="{h}" CharPrIDRef="{char_pr}">\n'
-                f'        <hml:T>{safe}</hml:T>\n'
-                f'      </hml:RUN>\n'
-                f'    </hml:P>')
+    _NS = (
+        'xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" '
+        'xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" '
+        'xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" '
+        'xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" '
+        'xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" '
+        'xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" '
+        'xmlns:opf="http://www.idpf.org/2007/opf/"'
+    )
 
-    def _pic_para(pid: int, w: int, h_px: int) -> str:
-        ph = f"{pid:08X}"; inst = f"{pid + 0x1000:08X}"
-        return (f'    <hml:P ParaID="{ph}" StyleIDRef="0">\n'
-                f'      <hml:RUN CharID="{ph}" CharPrIDRef="0">\n'
-                f'        <hml:CTRL ctrlID="gso ">\n'
-                f'          <hml:SHAPEOBJECT InstID="{inst}" Lock="0" NumberingType="Pic"\n'
-                f'              TextFlow="LargestOnly" TextHAlign="Both" TextVAlign="Both" ZOrder="0">\n'
-                f'            <hml:SIZE Width="{w}" Height="{h_px}"/>\n'
-                f'            <hml:POSITION TreatAsChar="1" AffectLSpacing="0"\n'
-                f'                VertRelTo="Para" HorzRelTo="Para" VertAlign="Top" HorzAlign="Left"\n'
-                f'                VertOffset="0" HorzOffset="0" FlowWithText="1" AllowOverlap="0"/>\n'
-                f'            <hml:OUTERSHAPE>\n'
-                f'              <hml:SHAPECOMPONENT InstID="{inst}" CurWidth="{w}" CurHeight="{h_px}"\n'
-                f'                  HorzFlip="0" VertFlip="0" Angle="0" GroupLevel="0"\n'
-                f'                  OriWidth="{w}" OriHeight="{h_px}">\n'
-                f'                <hml:FILLBRUSH>\n'
-                f'                  <hml:PICTUREBRUSH imageBinItemIDRef="1" PictureEffect="RealPic" Alpha="0">\n'
-                f'                    <hml:PICTUREINFO BrightDelta="0" ContrastDelta="0" Effect="RealPic" Alpha="0"/>\n'
-                f'                  </hml:PICTUREBRUSH>\n'
-                f'                </hml:FILLBRUSH>\n'
-                f'                <hml:STROKE OutlineType="None" OutlineWidth="0.1mm" OutlineColor="0"/>\n'
-                f'              </hml:SHAPECOMPONENT>\n'
-                f'            </hml:OUTERSHAPE>\n'
-                f'          </hml:SHAPEOBJECT>\n'
-                f'        </hml:CTRL>\n'
-                f'      </hml:RUN>\n'
-                f'    </hml:P>')
-
-    # 이미지 크기 계산 (HMM = 1/100 mm 단위, 96dpi 기준 1px ≈ 26.46 HMM)
-    iw, ih = 9072, 5040
-    if img_data:
-        qi = QImage(); qi.loadFromData(img_data)
-        if qi.width() > 0:
-            MAX_W = 17000
-            iw = int(qi.width() * 2540 / 96)
-            ih = int(qi.height() * 2540 / 96)
-            if iw > MAX_W:
-                ih = int(ih * MAX_W / iw); iw = MAX_W
+    def _p(text: str, pid: int, cpr: int = 0) -> str:
+        safe = _he(text) if text.strip() else ""
+        return (f'  <hp:p id="{pid}" paraPrIDRef="0" styleIDRef="0">\n'
+                f'    <hp:run charPrIDRef="{cpr}"><hp:t>{safe}</hp:t></hp:run>\n'
+                f'  </hp:p>')
 
     paras: list[str] = []
-    pid = 1
+    pid = 2  # pid=1 은 섹션 속성 단락에 사용
     if title:
-        paras.append(_para(title, style_id=1, char_pr=1, pid=pid)); pid += 1
-    if img_data:
-        paras.append(_pic_para(pid, iw, ih)); pid += 1
+        paras.append(_p(title, pid, cpr=1)); pid += 1
     if checklist:
         for is_chk, txt in checklist:
-            paras.append(_para(f"{'☑' if is_chk else '☐'} {txt}", pid=pid)); pid += 1
+            paras.append(_p(f"{'☑' if is_chk else '☐'} {txt}", pid)); pid += 1
     elif body:
         for line in (body.splitlines() or [""]):
-            paras.append(_para(line, pid=pid)); pid += 1
+            paras.append(_p(line, pid)); pid += 1
     if not paras:
-        paras.append(_para("", pid=pid))
+        paras.append(_p("", pid))
 
-    paras_xml = "\n".join(paras)
-    has_img = img_data is not None
+    section_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
+        f'<hs:sec {_NS}>\n'
+        '  <hp:p id="1" paraPrIDRef="0" styleIDRef="0">\n'
+        '    <hp:run charPrIDRef="0">\n'
+        '      <hp:secPr>\n'
+        '        <hc:pageInfo landscape="0" width="59528" height="84188" gutterType="LEFT_ONLY">\n'
+        '          <hc:margin header="4252" footer="4252" gutter="0"'
+        ' left="8504" right="8504" top="5669" bottom="4252"/>\n'
+        '        </hc:pageInfo>\n'
+        '      </hp:secPr>\n'
+        '      <hp:ctrl><hp:colPr type="NEWSPAPER" layout="LEFT" colCount="1"/></hp:ctrl>\n'
+        '    </hp:run>\n'
+        '  </hp:p>\n'
+        + "\n".join(paras) + "\n"
+        + "</hs:sec>"
+    )
 
-    section_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hml:HML xmlns:hml="http://www.hancom.co.kr/hwpml/2011/paragraph" Version="1.0">
-  <hml:BODY>
-    <hml:SECTION SubCode="0" Invisible="0" ZoneInfo="0" TextDirection="0"
-        SpaceColumns="1134" LineChange="0" VertRef="0" HorzRef="0"
-        OutlineOn="0" outlineShape="0">
-{paras_xml}
-    </hml:SECTION>
-  </hml:BODY>
-</hml:HML>'''
+    header_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
+        f'<hh:head {_NS} version="1.5" secCnt="1">\n'
+        '  <hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>\n'
+        '  <hh:refList>\n'
+        '    <hh:fontfaces>\n'
+        '      <hh:fontface lang="HANGUL"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="LATIN"><hh:font id="0" face="Times New Roman" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="HANJA"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="JAPANESE"><hh:font id="0" face="MS Mincho" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="OTHER"><hh:font id="0" face="Times New Roman" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="SYMBOL"><hh:font id="0" face="Symbol" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '      <hh:fontface lang="USER"><hh:font id="0" face="" type="TTF" isEmbedded="0"/></hh:fontface>\n'
+        '    </hh:fontfaces>\n'
+        '    <hh:borderFills>\n'
+        '      <hh:borderFill id="0" threeD="0" shadow="0" centerLine="0" breakCellSepLine="0">\n'
+        '        <hc:slash type="NONE" Crooked="0" isCounter="0"/>\n'
+        '        <hc:backSlash type="NONE" Crooked="0" isCounter="0"/>\n'
+        '        <hc:leftBorder type="NONE" width="0.1mm" color="#000000"/>\n'
+        '        <hc:rightBorder type="NONE" width="0.1mm" color="#000000"/>\n'
+        '        <hc:topBorder type="NONE" width="0.1mm" color="#000000"/>\n'
+        '        <hc:bottomBorder type="NONE" width="0.1mm" color="#000000"/>\n'
+        '        <hc:diagonal type="NONE" width="0.1mm" color="#000000"/>\n'
+        '        <hh:fillBrush/>\n'
+        '      </hh:borderFill>\n'
+        '    </hh:borderFills>\n'
+        '    <hh:charProperties>\n'
+        '      <hh:charPr id="0" height="1000" textColor="#000000" shadeColor="#FFFFFF"'
+        ' useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="0">\n'
+        '        <hh:font hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
+        '        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
+        '        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '      </hh:charPr>\n'
+        '      <hh:charPr id="1" height="1600" textColor="#000000" shadeColor="#FFFFFF"'
+        ' useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="0">\n'
+        '        <hh:font hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
+        '        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
+        '        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
+        '      </hh:charPr>\n'
+        '    </hh:charProperties>\n'
+        '    <hh:tabProperties><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties>\n'
+        '    <hh:numberings/>\n'
+        '    <hh:bullets/>\n'
+        '    <hh:paraProperties>\n'
+        '      <hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0"'
+        ' snapToGrid="1" suppressLineNumbers="0" checked="0">\n'
+        '        <hc:paraShape lineSpaceSort="RATIO" lineSpace="160"'
+        ' paraSpacingEntAuto="0" paraSpacingExtAuto="0"'
+        ' paraSpacingEnt="0" paraSpacingExt="0"'
+        ' indentLeft="0" indentRight="0" indentFirstLine="0" indentHanging="0"'
+        ' outlineLevel="NONE" borderConnect="0" fixedLineHeight="0" lineWrap="BREAK"/>\n'
+        '        <hc:justification horizAlign="JUSTIFY" vertAlign="BASELINE"/>\n'
+        '      </hh:paraPr>\n'
+        '    </hh:paraProperties>\n'
+        '    <hh:styles>\n'
+        '      <hh:style id="0" type="PARA" name="바탕글" engName="Normal"'
+        ' paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langIDRef="1042" lockForm="0"/>\n'
+        '    </hh:styles>\n'
+        '  </hh:refList>\n'
+        '</hh:head>'
+    )
 
-    bin_ref = ('    <hml:BINDATA BinDataID="1" Type="Embedding" Format="png">'
-               'BinData/image.png</hml:BINDATA>\n') if has_img else ''
-    header_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hml:HML xmlns:hml="http://www.hancom.co.kr/hwpml/2011/paragraph" Version="1.0">
-  <hml:HEAD>
-    <hml:DOCSETTING>
-      <hml:BEGINNUM BeginSectionNum="0" BeginPageNum="1" BeginFnNum="1"
-          BeginEnNum="1" BeginTableNum="1" BeginPicNum="1" BeginEquNum="1"/>
-    </hml:DOCSETTING>
-    <hml:CHARPRLIST>
-      <hml:CHARPR CharPrID="0" Height="1000" TextColor="0" ShadeColor="16777215"
-          UseFontSpace="0" UseKerning="0" SymMark="0" BorderFillIDRef="0">
-        <hml:FONT Hangul="함초롬바탕" Latin="Times New Roman" Hanja="함초롬바탕"
-            Japanese="MS Mincho" Other="Times New Roman" Symbol="Symbol" User=""/>
-      </hml:CHARPR>
-      <hml:CHARPR CharPrID="1" Height="1600" TextColor="0" ShadeColor="16777215"
-          UseFontSpace="0" UseKerning="0" SymMark="0" BorderFillIDRef="0">
-        <hml:FONT Hangul="함초롬돋움" Latin="Arial" Hanja="함초롬돋움"
-            Japanese="MS Gothic" Other="Arial" Symbol="Symbol" User=""/>
-      </hml:CHARPR>
-    </hml:CHARPRLIST>
-    <hml:TABPRLIST/><hml:NUMBERINGLIST/><hml:BULLETLIST/>
-    <hml:PARAPRLIST>
-      <hml:PARAPR ParaPrID="0" TabPrIDRef="0" Condense="0" FontLineHeight="0"
-          SnapToGrid="1" SuppressLineNumbers="0" Checked="0">
-        <hml:PARASHAPE HorzAlign="Justify" VerzAlign="Baseline" LineSpaceSort="Ratio"
-            LineSpace="160" ParaSpaceEntAuto="0" ParaSpaceExtAuto="0"
-            ParaSpacEnt="0" ParaSpacExt="0"/>
-      </hml:PARAPR>
-      <hml:PARAPR ParaPrID="1" TabPrIDRef="0" Condense="0" FontLineHeight="0"
-          SnapToGrid="1" SuppressLineNumbers="0" Checked="0">
-        <hml:PARASHAPE HorzAlign="Justify" VerzAlign="Baseline" LineSpaceSort="Ratio"
-            LineSpace="160" ParaSpaceEntAuto="0" ParaSpaceExtAuto="0"
-            ParaSpacEnt="300" ParaSpacExt="150"/>
-      </hml:PARAPR>
-    </hml:PARAPRLIST>
-    <hml:STYLEPRLIST>
-      <hml:STYLEPR StyleID="0" Type="Para" Name="바탕글" EngName="Normal"
-          ParaPrIDRef="0" CharPrIDRef="0" LangIDRef="1042" LockForm="0"/>
-      <hml:STYLEPR StyleID="1" Type="Para" Name="개요 1" EngName="Outline 1"
-          ParaPrIDRef="1" CharPrIDRef="1" LangIDRef="1042" LockForm="0"/>
-    </hml:STYLEPRLIST>
-    <hml:BORDERFILLLIST>
-      <hml:BORDERFILL BorderFillID="0" ThreeD="0" Shadow="0" CenterLine="0"
-          BreakCellSeparateLine="0">
-        <hml:BORDER Type="None" Width="0.1mm" Color="0"/>
-        <hml:DIAGONAL Type="None" Width="0.1mm" Color="0"/>
-        <hml:FILLBRUSH/>
-      </hml:BORDERFILL>
-    </hml:BORDERFILLLIST>
-    <hml:FACENAMELISTT/><hml:COMPATIBLELIST/><hml:LAYOUTCOMPAT/>
-    {'<hml:BINDATASTORAGE>' + chr(10) + bin_ref + '  </hml:BINDATASTORAGE>' if has_img else ''}
-  </hml:HEAD>
-</hml:HML>'''
+    settings_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
+        f'<ha:HWPApplicationSetting {_NS}>\n'
+        '  <ha:CaretPosition listIDRef="0" paraIDRef="1" pos="0"/>\n'
+        '</ha:HWPApplicationSetting>'
+    )
 
-    bin_content_entry = ('    <hwpFiling:Content ItemPath="Contents/BinData/image.png"'
-                         ' ItemID="BinData/1" Type="Application/x-hwp-v5-bindata"/>\n') if has_img else ''
-    content_hpf = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<hwpFiling:HWPFiling hwpFiling:version="0.6.1"
-    xmlns:hwpFiling="urn:schemas-microsoft-com:office:office">
-  <hwpFiling:HWPFiling>
-    <hwpFiling:Content ItemPath="Contents/header.xml" ItemID="Header" Type="Application/x-hwp-v5-header"/>
-    <hwpFiling:Content ItemPath="Contents/section0.xml" ItemID="BodyText/Section0" Type="Application/x-hwp-v5-section"/>
-{bin_content_entry}  </hwpFiling:HWPFiling>
-</hwpFiling:HWPFiling>'''
+    content_hpf = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
+        f'<opf:package {_NS} version="" unique-identifier="" id="">\n'
+        '  <opf:metadata><opf:language>ko</opf:language></opf:metadata>\n'
+        '  <opf:manifest>\n'
+        '    <opf:item id="header" href="Contents/header.xml" media-type="application/xml"/>\n'
+        '    <opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>\n'
+        '    <opf:item id="settings" href="settings.xml" media-type="application/xml"/>\n'
+        '  </opf:manifest>\n'
+        '  <opf:spine>\n'
+        '    <opf:itemref idref="header" linear="yes"/>\n'
+        '    <opf:itemref idref="section0" linear="yes"/>\n'
+        '  </opf:spine>\n'
+        '</opf:package>'
+    )
+
+    container_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
+        '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container"\n'
+        '               xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf">\n'
+        '  <ocf:rootfiles>\n'
+        '    <ocf:rootfile full-path="Contents/content.hpf"'
+        ' media-type="application/hwpml-package+xml"/>\n'
+        '  </ocf:rootfiles>\n'
+        '</ocf:container>'
+    )
 
     with _zipfile.ZipFile(path, 'w', _zipfile.ZIP_DEFLATED) as z:
         z.writestr("mimetype", "application/hwp+zip", compress_type=_zipfile.ZIP_STORED)
-        z.writestr("VersionFile.xml",
-                   '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-                   '<hwpVersionInfo xmlns:hwp="http://www.hancom.co.kr/versioninfo">\n'
-                   '  <hwp:version hwp:major="5" hwp:minor="1" hwp:micro="6" hwp:buildNumber="0"/>\n'
-                   '</hwpVersionInfo>')
-        z.writestr("META-INF/container.xml",
-                   '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-                   '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
-                   '  <rootfiles>\n'
-                   '    <rootfile full-path="Contents/content.hpf"'
-                   ' media-type="application/hwpml-package+xml"/>\n'
-                   '  </rootfiles>\n'
-                   '</container>')
+        z.writestr("META-INF/container.xml", container_xml)
         z.writestr("Contents/content.hpf", content_hpf)
         z.writestr("Contents/header.xml", header_xml)
         z.writestr("Contents/section0.xml", section_xml)
-        if has_img:
-            z.writestr("Contents/BinData/image.png", img_data)
+        z.writestr("settings.xml", settings_xml)
 
 
 def _write_docx(path: str, title: str, body: str,
@@ -823,7 +814,8 @@ class NoteEditorWidget(QWidget):
         save_menu.addAction("Text (.txt)").triggered.connect(self._on_save_txt)
         save_menu.addAction("Image (.png)").triggered.connect(self._on_save_png)
         save_menu.addAction("PDF (.pdf)").triggered.connect(self._on_save_pdf)
-        save_menu.addAction("Word/한글 (.docx)").triggered.connect(self._on_save_hwpx)
+        save_menu.addAction("한글 (.hwpx)").triggered.connect(self._on_save_hwpx)
+        save_menu.addAction("Word (.docx)").triggered.connect(self._on_save_docx)
 
         email_act = menu.addAction(f"✉  {_('Send via Email')}")
         email_act.triggered.connect(self._on_email_share)
@@ -977,9 +969,25 @@ class NoteEditorWidget(QWidget):
     def _on_save_hwpx(self):
         title, body = self._note_content()
         stem = title or f"note_{(self._note_id or 'new')[:8]}"
+        default = str(Path.home() / "Downloads" / f"{stem}.hwpx")
+        path, _filter = QFileDialog.getSaveFileName(
+            self, _("Save as File"), default, "한글 (*.hwpx);;All files (*)"
+        )
+        if not path:
+            return
+        checklist = None
+        if self._list_scroll.isVisible():
+            checklist = [(cb.isChecked(), text) for cb, text in self._checklist_rows]
+        img_data = self._fetch_note_image()
+        _write_hwpx(path, title, body, checklist, img_data)
+        self._show_export_toast(f"✓  {Path(path).name}")
+
+    def _on_save_docx(self):
+        title, body = self._note_content()
+        stem = title or f"note_{(self._note_id or 'new')[:8]}"
         default = str(Path.home() / "Downloads" / f"{stem}.docx")
         path, _filter = QFileDialog.getSaveFileName(
-            self, _("Save as File"), default, "Word/한글 (*.docx);;All files (*)"
+            self, _("Save as File"), default, "Word (*.docx);;All files (*)"
         )
         if not path:
             return
