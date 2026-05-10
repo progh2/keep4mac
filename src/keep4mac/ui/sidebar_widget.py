@@ -1,5 +1,7 @@
+import unicodedata
+
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QMenu, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QMenu, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from keep4mac.core import autostart
 import keep4mac.i18n as i18n
@@ -69,7 +71,9 @@ class SidebarWidget(QWidget):
         layout.addStretch()
 
         self._autostart_btn = QPushButton()
-        self._autostart_btn.setFixedSize(52, 50)
+        self._autostart_btn.setFixedWidth(52)
+        self._autostart_btn.setMinimumHeight(50)
+        self._autostart_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         self._autostart_btn.clicked.connect(self._on_autostart_toggle)
         layout.addWidget(self._autostart_btn)
         self._refresh_autostart_btn()
@@ -87,18 +91,22 @@ class SidebarWidget(QWidget):
 
     def retranslate_ui(self):
         """언어 변경 후 모든 버튼 텍스트를 즉시 갱신한다."""
-        self._new_note_btn.setText(f"🗒\n{_('New Note')}")
-        self._sync_btn.setText(f"↻\n{_('Sync')}")
-        self._web_btn.setText(f"🌐\n{_('Web Keep')}")
-        self._lang_btn.setText(f"🌏\n{_('Language')}")
-        self._about_btn.setText(f"?\n{_('About')}")
-        self._logout_btn.setText(f"↩\n{_('Logout')}")
-        self._quit_btn.setText(f"✕\n{_('Quit')}")
+        self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
+        self._sync_btn.setText(f"↻\n{self._wrap_label(_('Sync'))}")
+        self._web_btn.setText(f"🌐\n{self._wrap_label(_('Web Keep'))}")
+        self._lang_btn.setText(f"🌏\n{self._wrap_label(_('Language'))}")
+        self._about_btn.setText(f"?\n{self._wrap_label(_('About'))}")
+        self._logout_btn.setText(f"↩\n{self._wrap_label(_('Logout'))}")
+        self._quit_btn.setText(f"✕\n{self._wrap_label(_('Quit'))}")
         self._refresh_autostart_btn()
 
     def _refresh_autostart_btn(self):
         enabled = autostart.is_enabled()
-        self._autostart_btn.setText(_("🚀\nAutostart"))
+        full_text = _("🚀\nAutostart")
+        parts = full_text.split('\n', 1)
+        icon = parts[0]
+        label = self._wrap_label(parts[1]) if len(parts) > 1 else ''
+        self._autostart_btn.setText(f"{icon}\n{label}")
         self._autostart_btn.setStyleSheet(
             _AUTOSTART_ON_CSS if enabled else _BTN_CSS.format()
         )
@@ -145,9 +153,30 @@ class SidebarWidget(QWidget):
             i18n.save_lang(lang)
             self.lang_changed.emit(lang)
 
+    @staticmethod
+    def _wrap_label(label: str) -> str:
+        """52px 사이드바 버튼 너비에 맞게 라벨 텍스트를 자동 줄바꿈한다."""
+        def text_units(s: str) -> int:
+            return sum(2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1 for c in s)
+
+        MAX_UNITS = 8  # 52px - 4px 패딩 ≈ 48px 콘텐츠 너비 기준
+        if text_units(label) <= MAX_UNITS:
+            return label
+        if ' ' in label:
+            return '\n'.join(label.split(' ', 1))
+        target = text_units(label) // 2
+        units = 0
+        for i, c in enumerate(label):
+            units += 2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1
+            if units >= target:
+                return label[:i + 1] + '\n' + label[i + 1:]
+        return label
+
     def _make_btn(self, icon: str, label: str, signal) -> QPushButton:
-        btn = QPushButton(f"{icon}\n{label}")
-        btn.setFixedSize(52, 50)
+        btn = QPushButton(f"{icon}\n{self._wrap_label(label)}")
+        btn.setFixedWidth(52)
+        btn.setMinimumHeight(50)
+        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         btn.setStyleSheet(_BTN_CSS)
         if signal is not None:
             btn.clicked.connect(lambda: signal.emit())

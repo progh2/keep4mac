@@ -153,7 +153,7 @@ class NoteItemWidget(QFrame):
             return
         w = self._img_label.width() or 270
         h = self._img_label.height()
-        scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+        scaled = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio,
                                Qt.TransformationMode.SmoothTransformation)
         self._img_label.setPixmap(scaled)
 

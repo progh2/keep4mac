@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt, QThread, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices, QGuiApplication, QPixmap
 from PyQt6.QtWidgets import (
     QCheckBox, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QScrollArea, QSizePolicy, QTextEdit,
+    QMessageBox, QPushButton, QScrollArea, QSizePolicy, QTextEdit,
     QVBoxLayout, QWidget,
 )
 
@@ -79,7 +79,7 @@ class NoteEditorWidget(QWidget):
         )
         hl.addWidget(self._header_label, 1)
 
-        self._delete_btn = QPushButton("🗑")
+        self._delete_btn = QPushButton("✕")
         self._delete_btn.setFixedSize(32, 32)
         self._delete_btn.setToolTip(_("Delete"))
         self._delete_btn.setStyleSheet("""
@@ -463,6 +463,17 @@ class NoteEditorWidget(QWidget):
         self.back_requested.emit()
 
     def _on_delete(self):
+        msg = QMessageBox(self)
+        msg.setWindowTitle(_("Delete Note"))
+        msg.setText(_("Are you sure you want to delete this note?\nThis action cannot be undone."))
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+        msg.button(QMessageBox.StandardButton.Yes).setText(_("Delete"))
+        msg.button(QMessageBox.StandardButton.No).setText(_("Cancel"))
+        if msg.exec() != QMessageBox.StandardButton.Yes:
+            return
         if self._note_id:
             self._client.delete_note(self._note_id)
         self.back_requested.emit()

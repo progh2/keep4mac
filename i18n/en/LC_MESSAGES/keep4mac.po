@@ -103,3 +103,12 @@ msgstr ""
 
 msgid "Language"
 msgstr ""
+
+msgid "Delete Note"
+msgstr ""
+
+msgid "Are you sure you want to delete this note?\nThis action cannot be undone."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""

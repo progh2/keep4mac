@@ -103,3 +103,12 @@ msgstr "닫기"
 
 msgid "Language"
 msgstr "언어"
+
+msgid "Delete Note"
+msgstr "노트 삭제"
+
+msgid "Are you sure you want to delete this note?\nThis action cannot be undone."
+msgstr "이 노트를 삭제할까요?\n삭제 후 되돌릴 수 없습니다."
+
+msgid "Cancel"
+msgstr "취소"
