@@ -68,23 +68,21 @@ class SidebarWidget(QWidget):
 
         self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
         self._sync_btn      = self._make_btn("↻",  _("Sync"),     self.sync_requested)
-        self._settings_btn  = self._make_btn("⚙",  _("Settings"), None)
-        self._settings_btn.clicked.connect(self._on_settings_click)
 
-        for btn in (self._new_note_btn, self._sync_btn, self._settings_btn):
+        for btn in (self._new_note_btn, self._sync_btn):
             layout.addWidget(btn)
 
         layout.addStretch()
 
-        self._quit_btn = self._make_btn("✕", _("Quit"), self.quit_requested)
-        layout.addWidget(self._quit_btn)
+        self._settings_btn  = self._make_btn("⚙",  _("Settings"), None)
+        self._settings_btn.clicked.connect(self._on_settings_click)
+        layout.addWidget(self._settings_btn)
 
     def retranslate_ui(self):
         """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""
         self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
         self._sync_btn.setText(f"↻\n{self._wrap_label(_('Sync'))}")
         self._settings_btn.setText(f"⚙\n{self._wrap_label(_('Settings'))}")
-        self._quit_btn.setText(f"✕\n{self._wrap_label(_('Quit'))}")
 
     # ── 설정 메뉴 ─────────────────────────────────────────────
 
@@ -127,6 +125,12 @@ class SidebarWidget(QWidget):
         # 로그아웃
         logout_act = menu.addAction(f"↩  {_('Logout')}")
         logout_act.triggered.connect(lambda: self.logout_requested.emit())
+
+        menu.addSeparator()
+
+        # 종료
+        quit_act = menu.addAction(f"✕  {_('Quit')}")
+        quit_act.triggered.connect(lambda: self.quit_requested.emit())
 
         pos = self._settings_btn.mapToGlobal(self._settings_btn.rect().topRight())
         menu.exec(pos)
