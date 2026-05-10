@@ -151,3 +151,9 @@ msgstr "ノートの作成に失敗しました"
 
 msgid "Save as File"
 msgstr "ファイルとして保存"
+
+msgid "Unsaved Changes"
+msgstr "未保存の変更"
+
+msgid "You have unsaved changes.\nSave before leaving?"
+msgstr "未保存の変更があります。\n保存してから終了しますか？"

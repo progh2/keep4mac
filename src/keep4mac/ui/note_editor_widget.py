@@ -307,6 +307,8 @@ class NoteEditorWidget(QWidget):
         self._checklist_rows: list[tuple[QCheckBox, str]] = []
         self._img_thread: _ImageThread | None = None
         self._translate_thread: _TranslateThread | None = None
+        self._orig_title: str = ""
+        self._orig_body: str = ""
         self._build_ui()
 
     # ── UI 구성 ───────────────────────────────────────────────
@@ -547,6 +549,7 @@ class NoteEditorWidget(QWidget):
         self._header_label.setText(_("Edit Note"))
         self._delete_btn.show()
         self._populate(note)
+        self._orig_title, self._orig_body = self._note_content()
 
     def new_note(self):
         self._note_id = None
@@ -564,6 +567,8 @@ class NoteEditorWidget(QWidget):
         self._links_section.hide()
         self._set_color(NoteColor.DEFAULT)
         self._refresh_pin_btn()
+        self._orig_title = ""
+        self._orig_body = ""
         self._title_edit.setFocus()
 
     # ── 내부 ──────────────────────────────────────────────────
@@ -663,7 +668,26 @@ class NoteEditorWidget(QWidget):
 
     # ── 슬롯 ──────────────────────────────────────────────────
 
+    def _has_unsaved_changes(self) -> bool:
+        title, body = self._note_content()
+        return title != self._orig_title or body != self._orig_body
+
     def _on_back(self):
+        if self._has_unsaved_changes():
+            from PyQt6.QtWidgets import QMessageBox
+            ret = QMessageBox.question(
+                self,
+                _("Unsaved Changes"),
+                _("You have unsaved changes.\nSave before leaving?"),
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
+            )
+            if ret == QMessageBox.StandardButton.Save:
+                self._on_save()
+                return
+            elif ret == QMessageBox.StandardButton.Cancel:
+                return
         self.back_requested.emit()
 
     def _on_pin_toggle(self):
