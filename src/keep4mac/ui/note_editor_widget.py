@@ -1,15 +1,56 @@
-from PyQt6.QtCore import Qt, QThread, QUrl, pyqtSignal
+from pathlib import Path
+from urllib.parse import quote
+
+import requests as _req
+
+from PyQt6.QtCore import Qt, QThread, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QDesktopServices, QGuiApplication, QPixmap
 from PyQt6.QtWidgets import (
-    QCheckBox, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QPushButton, QScrollArea, QSizePolicy, QTextEdit,
+    QApplication, QCheckBox, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit,
+    QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QTextEdit,
     QVBoxLayout, QWidget,
 )
 
+import keep4mac.i18n as i18n
 from keep4mac.api.keep_client import KeepClient
 from keep4mac.core.models import COLOR_HEX, NoteColor, NoteModel, NoteType
 from keep4mac.core.url_utils import extract_urls, short_url
 from keep4mac.i18n import gettext as _
+
+
+class _TranslateThread(QThread):
+    """MyMemory 무료 API를 사용해 제목·본문을 백그라운드 번역한다."""
+    done = pyqtSignal(str, str)   # (translated_title, translated_content)
+    error = pyqtSignal(str)
+
+    _API = "https://api.mymemory.translated.net/get"
+
+    def __init__(self, title: str, content: str, source: str, target: str):
+        super().__init__()
+        self._title = title
+        self._content = content
+        self._source = source
+        self._target = target
+
+    def _call(self, text: str) -> str:
+        if not text.strip():
+            return text
+        resp = _req.get(
+            self._API,
+            params={"q": text[:2000], "langpair": f"{self._source}|{self._target}"},
+            timeout=12,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("responseStatus") == 200:
+            return data["responseData"]["translatedText"]
+        raise RuntimeError(data.get("responseDetails", "Translation error"))
+
+    def run(self):
+        try:
+            self.done.emit(self._call(self._title), self._call(self._content))
+        except Exception as e:
+            self.error.emit(str(e))
 
 # 색상 팔레트 순서 (DEFAULT는 흰색 맨 앞)
 _PALETTE = [
@@ -47,6 +88,7 @@ class NoteEditorWidget(QWidget):
         self._color_btns: dict[NoteColor, QPushButton] = {}
         self._checklist_rows: list[tuple[QCheckBox, str]] = []
         self._img_thread: _ImageThread | None = None
+        self._translate_thread: _TranslateThread | None = None
         self._build_ui()
 
     # ── UI 구성 ───────────────────────────────────────────────
@@ -233,6 +275,20 @@ class NoteEditorWidget(QWidget):
         self._refresh_palette()
         self._refresh_pin_btn()
 
+        self._export_btn = QPushButton("📤")
+        self._export_btn.setFixedSize(32, 32)
+        self._export_btn.setToolTip(_("Export / Share"))
+        self._export_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #5f6368;
+                border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f1f3f4; }
+            QPushButton:pressed { background: #e8eaed; }
+        """)
+        self._export_btn.clicked.connect(self._on_export_click)
+        fl.addWidget(self._export_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         self._save_btn = QPushButton(_("Save"))
         self._save_btn.setMinimumWidth(80)
         self._save_btn.setStyleSheet("""
@@ -256,6 +312,7 @@ class NoteEditorWidget(QWidget):
         self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._delete_btn.setToolTip(_("Delete"))
         self._pin_btn.setToolTip(_("Pin / Unpin"))
+        self._export_btn.setToolTip(_("Export / Share"))
         self._save_btn.setText(_("Save"))
         if self._is_new:
             self._header_label.setText(_("New Note"))
@@ -493,3 +550,147 @@ class NoteEditorWidget(QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self._on_back()
         super().keyPressEvent(event)
+
+    # ── 내보내기 / 공유 ───────────────────────────────────────
+
+    def _note_content(self) -> tuple[str, str]:
+        """(title, body_text) 반환. 체크리스트는 텍스트로 직렬화."""
+        title = self._title_edit.text().strip()
+        if self._list_scroll.isVisible():
+            body = "\n".join(
+                f"{'[x]' if cb.isChecked() else '[ ]'} {text}"
+                for cb, text in self._checklist_rows
+            )
+        else:
+            body = self._body_edit.toPlainText().strip()
+        return title, body
+
+    def _on_export_click(self):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background: white; border: 1px solid #dadce0;
+                border-radius: 8px; padding: 4px; font-size: 12px;
+            }
+            QMenu::item { padding: 6px 16px; border-radius: 4px; }
+            QMenu::item:selected { background: #f1f3f4; color: #202124; }
+            QMenu::separator { height: 1px; background: #e8eaed; margin: 4px 8px; }
+            QMenu::right-arrow { image: none; width: 8px; }
+        """)
+
+        md_act = menu.addAction(f"📄  {_('Save as Markdown')}")
+        md_act.triggered.connect(self._on_save_md)
+
+        email_act = menu.addAction(f"✉  {_('Send via Email')}")
+        email_act.triggered.connect(self._on_email_share)
+
+        kakao_act = menu.addAction(f"💬  {_('Share via KakaoTalk')}")
+        kakao_act.triggered.connect(self._on_kakao_share)
+
+        menu.addSeparator()
+
+        translate_menu = menu.addMenu(f"🌐  {_('Translate & New Note')}")
+        translate_menu.setStyleSheet(menu.styleSheet())
+        current_lang = i18n.current_lang()
+        for code, name in i18n.SUPPORTED_LANGS.items():
+            if code != current_lang:
+                act = translate_menu.addAction(f"→ {name}")
+                act.triggered.connect(
+                    lambda checked=False, c=code: self._on_translate(c)
+                )
+        if self._is_new:
+            translate_menu.setEnabled(False)
+
+        pos = self._export_btn.mapToGlobal(self._export_btn.rect().topLeft())
+        menu.exec(pos)
+
+    # ── #25 Markdown 저장 ────────────────────────────────────
+
+    def _on_save_md(self):
+        title, body = self._note_content()
+        filename = f"{title}.md" if title else f"note_{(self._note_id or 'new')[:8]}.md"
+        default = str(Path.home() / "Downloads" / filename)
+        path, _ = QFileDialog.getSaveFileName(
+            self, _("Save as Markdown"), default, "Markdown (*.md);;All files (*)"
+        )
+        if not path:
+            return
+
+        lines: list[str] = []
+        if title:
+            lines += [f"# {title}", ""]
+        if self._list_scroll.isVisible():
+            for cb, text in self._checklist_rows:
+                lines.append(f"- [{'x' if cb.isChecked() else ' '}] {text}")
+        else:
+            if body:
+                lines.append(body)
+
+        Path(path).write_text("\n".join(lines), encoding="utf-8")
+        self._show_export_toast(f"✓  {Path(path).name}")
+
+    # ── #27 이메일 공유 ──────────────────────────────────────
+
+    def _on_email_share(self):
+        title, body = self._note_content()
+        url = QUrl(f"mailto:?subject={quote(title)}&body={quote(body)}")
+        QDesktopServices.openUrl(url)
+
+    # ── #26 카카오톡 공유 ────────────────────────────────────
+
+    def _on_kakao_share(self):
+        title, body = self._note_content()
+        text = f"{title}\n\n{body}".strip() if title else body
+        QApplication.clipboard().setText(text)
+        kakao_url = QUrl(f"kakaotalk://send?text={quote(text)}")
+        opened = QDesktopServices.openUrl(kakao_url)
+        if opened:
+            self._show_export_toast(_("Opening KakaoTalk…"))
+        else:
+            self._show_export_toast(_("Copied to clipboard. Open KakaoTalk to share."))
+
+    # ── #32 번역 새 노트 ─────────────────────────────────────
+
+    def _on_translate(self, target_lang: str):
+        title, content = self._note_content()
+        source = i18n.current_lang()
+        self._export_btn.setEnabled(False)
+        self._translate_thread = _TranslateThread(title, content, source, target_lang)
+        self._translate_thread.done.connect(
+            lambda t, c: self._on_translate_done(t, c, target_lang)
+        )
+        self._translate_thread.error.connect(
+            lambda msg: self._show_export_toast(f"⚠ {_('Translation failed')}: {msg[:60]}")
+        )
+        self._translate_thread.finished.connect(
+            lambda: self._export_btn.setEnabled(True)
+        )
+        self._translate_thread.start()
+
+    def _on_translate_done(self, t_title: str, t_content: str, lang_code: str):
+        prefix = f"[{lang_code.upper()}] "
+        self._client.create_note(
+            prefix + t_title if t_title else prefix.strip(),
+            t_content,
+            self._current_color,
+        )
+        self.back_requested.emit()
+
+    # ── 내부 토스트 ──────────────────────────────────────────
+
+    def _show_export_toast(self, message: str):
+        toast = QLabel(message, self)
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet("""
+            QLabel {
+                background: rgba(32,33,36,0.88); color: white;
+                font-size: 12px; border-radius: 8px; padding: 8px 14px;
+            }
+        """)
+        toast.adjustSize()
+        w = min(toast.sizeHint().width() + 24, self.width() - 32)
+        toast.setFixedWidth(w)
+        toast.move((self.width() - w) // 2, self.height() - toast.sizeHint().height() - 20)
+        toast.show()
+        toast.raise_()
+        QTimer.singleShot(2500, toast.deleteLater)

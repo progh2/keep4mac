@@ -115,3 +115,27 @@ msgstr "이 노트를 삭제할까요?\n삭제 후 되돌릴 수 없습니다."
 
 msgid "Cancel"
 msgstr "취소"
+
+msgid "Export / Share"
+msgstr "내보내기 / 공유"
+
+msgid "Save as Markdown"
+msgstr "MD로 저장"
+
+msgid "Send via Email"
+msgstr "이메일로 보내기"
+
+msgid "Share via KakaoTalk"
+msgstr "카카오톡으로 공유"
+
+msgid "Translate & New Note"
+msgstr "번역해서 새 노트 만들기"
+
+msgid "Translation failed"
+msgstr "번역 실패"
+
+msgid "Opening KakaoTalk…"
+msgstr "카카오톡 열리는 중…"
+
+msgid "Copied to clipboard. Open KakaoTalk to share."
+msgstr "클립보드에 복사됐습니다. 카카오톡을 열어 붙여넣기 하세요."

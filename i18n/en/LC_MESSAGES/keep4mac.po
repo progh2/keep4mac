@@ -115,3 +115,27 @@ msgstr ""
 
 msgid "Cancel"
 msgstr ""
+
+msgid "Export / Share"
+msgstr ""
+
+msgid "Save as Markdown"
+msgstr ""
+
+msgid "Send via Email"
+msgstr ""
+
+msgid "Share via KakaoTalk"
+msgstr ""
+
+msgid "Translate & New Note"
+msgstr ""
+
+msgid "Translation failed"
+msgstr ""
+
+msgid "Opening KakaoTalk…"
+msgstr ""
+
+msgid "Copied to clipboard. Open KakaoTalk to share."
+msgstr ""

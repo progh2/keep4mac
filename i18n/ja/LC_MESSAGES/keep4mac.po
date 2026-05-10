@@ -115,3 +115,27 @@ msgstr "このメモを削除しますか？\n削除後は元に戻せません�
 
 msgid "Cancel"
 msgstr "キャンセル"
+
+msgid "Export / Share"
+msgstr "エクスポート / 共有"
+
+msgid "Save as Markdown"
+msgstr "Markdownで保存"
+
+msgid "Send via Email"
+msgstr "メールで送る"
+
+msgid "Share via KakaoTalk"
+msgstr "カカオトークで共有"
+
+msgid "Translate & New Note"
+msgstr "翻訳して新しいメモ"
+
+msgid "Translation failed"
+msgstr "翻訳に失敗しました"
+
+msgid "Opening KakaoTalk…"
+msgstr "カカオトークを起動中…"
+
+msgid "Copied to clipboard. Open KakaoTalk to share."
+msgstr "クリップボードにコピーしました。カカオトークを開いて貼り付けてください。"
