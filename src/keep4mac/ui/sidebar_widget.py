@@ -75,7 +75,6 @@ class SidebarWidget(QWidget):
         self._refresh_autostart_btn()
 
         self._lang_btn = self._make_btn("🌏", _("Language"), None)
-        self._lang_btn.clicked.disconnect()
         self._lang_btn.clicked.connect(self._on_lang_click)
         layout.addWidget(self._lang_btn)
 
