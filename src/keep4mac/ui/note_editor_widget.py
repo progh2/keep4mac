@@ -88,15 +88,15 @@ def _write_hwpx(path: str, title: str, body: str,
         h = f"{pid:08X}"
         safe = _he(text) if text.strip() else " "
         return (f'    <hml:P ParaID="{h}" StyleIDRef="{style_id}">\n'
-                f'      <hml:RUN CharID="{h}">\n'
-                f'        <hml:CHAR CharPrIDRef="{char_pr}"><hml:T>{safe}</hml:T></hml:CHAR>\n'
+                f'      <hml:RUN CharID="{h}" CharPrIDRef="{char_pr}">\n'
+                f'        <hml:T>{safe}</hml:T>\n'
                 f'      </hml:RUN>\n'
                 f'    </hml:P>')
 
     def _pic_para(pid: int, w: int, h_px: int) -> str:
         ph = f"{pid:08X}"; inst = f"{pid + 0x1000:08X}"
         return (f'    <hml:P ParaID="{ph}" StyleIDRef="0">\n'
-                f'      <hml:RUN CharID="{ph}">\n'
+                f'      <hml:RUN CharID="{ph}" CharPrIDRef="0">\n'
                 f'        <hml:CTRL ctrlID="gso ">\n'
                 f'          <hml:SHAPEOBJECT InstID="{inst}" Lock="0" NumberingType="Pic"\n'
                 f'              TextFlow="LargestOnly" TextHAlign="Both" TextVAlign="Both" ZOrder="0">\n'
@@ -216,22 +216,24 @@ def _write_hwpx(path: str, title: str, body: str,
   </hml:HEAD>
 </hml:HML>'''
 
-    bin_content_entry = ('    <Content ItemPath="Contents/BinData/image.png"'
+    bin_content_entry = ('    <hwpFiling:Content ItemPath="Contents/BinData/image.png"'
                          ' ItemID="BinData/1" Type="Application/x-hwp-v5-bindata"/>\n') if has_img else ''
     content_hpf = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<HWPFiling Revision="1.0" xmlns:opc="http://schemas.openxmlformats.org/package/2006/content-types">
-  <HWPFiling>
-    <Content ItemPath="Contents/header.xml" ItemID="Header" Type="Application/x-hwp-v5-header"/>
-    <Content ItemPath="Contents/section0.xml" ItemID="BodyText/Section0" Type="Application/x-hwp-v5-section"/>
-{bin_content_entry}  </HWPFiling>
-</HWPFiling>'''
+<hwpFiling:HWPFiling hwpFiling:version="0.6.1"
+    xmlns:hwpFiling="urn:schemas-microsoft-com:office:office">
+  <hwpFiling:HWPFiling>
+    <hwpFiling:Content ItemPath="Contents/header.xml" ItemID="Header" Type="Application/x-hwp-v5-header"/>
+    <hwpFiling:Content ItemPath="Contents/section0.xml" ItemID="BodyText/Section0" Type="Application/x-hwp-v5-section"/>
+{bin_content_entry}  </hwpFiling:HWPFiling>
+</hwpFiling:HWPFiling>'''
 
     with _zipfile.ZipFile(path, 'w', _zipfile.ZIP_DEFLATED) as z:
         z.writestr("mimetype", "application/hwp+zip", compress_type=_zipfile.ZIP_STORED)
         z.writestr("VersionFile.xml",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-                   '<hwp:VersionFile xmlns:hwp="http://www.hancom.co.kr/versioninfo"'
-                   ' hwp:HWP5VER="1.0.0.0" hwp:HWPML10VER="1.0"/>')
+                   '<hwpVersionInfo xmlns:hwp="http://www.hancom.co.kr/versioninfo">\n'
+                   '  <hwp:version hwp:major="5" hwp:minor="1" hwp:micro="6" hwp:buildNumber="0"/>\n'
+                   '</hwpVersionInfo>')
         z.writestr("META-INF/container.xml",
                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
                    '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
