@@ -9,10 +9,16 @@ Google Keep macOS 메뉴바 앱. 트레이 아이콘을 클릭하면 Keep 노트
 - **노트 목록 조회** — 최신 노트 목록을 카드 형태로 표시, 이미지 썸네일 지원
 - **노트 작성·수정·삭제** — 패널 내에서 직접 편집 가능
 - **체크리스트 노트** — 항목별 체크/해제 지원
+- **자동 저장** — 뒤로가기·ESC·패널 닫기 시 변경사항 자동 저장
+- **되돌리기** — 수정 중 마지막 저장 상태로 즉시 복원
 - **링크 자동 인식** — 노트 내 URL 클릭 시 브라우저 오픈
-- **클립보드 복사** — 노트 카드 호버 시 📋 버튼으로 제목+내용 복사
+- **클립보드 복사** — 목록 카드 호버 📋 / 편집기 버튼으로 제목+내용 복사
+- **내보내기·공유** — Markdown / TXT / PNG / PDF / 한글(.hwpx) / Word(.docx) 저장, 이메일·카카오톡 공유
+- **내 메일로 보내기** — 설정에 내 메일 주소 저장 후 원클릭 전송
+- **번역 새 노트** — MyMemory API로 노트를 번역하여 새 노트 생성
 - **로그인 자동 시작** — 사이드바 토글로 macOS LaunchAgent 등록/해제
 - **다국어 지원** — 한국어·영어·일본어, 사이드바에서 즉시 전환 가능
+- **한국어 IME 최적화** — macOS 한글 입력 첫 글자 자소 분리 현상 수정
 
 ## 인증 방식
 
@@ -79,6 +85,7 @@ bash build_dmg.sh
 | Keep API | [gkeepapi](https://github.com/kiwiz/gkeepapi) | 비공식 Google Keep API 클라이언트. SAPISIDHASH 인증 방식으로 연동 |
 | 브라우저 로그인 | [Playwright](https://playwright.dev/python/) | Chromium 제어로 Google 계정 로그인 처리. 자동화된 쿠키 추출에 사용 |
 | 세션 저장 | [keyring](https://github.com/jaraco/keyring) | macOS Keychain에 인증 정보를 안전하게 저장·불러오기 |
+| 문서 저장 | [python-docx](https://python-docx.readthedocs.io/), [python-hwpx](https://github.com/airmang/python-hwpx) | Word(.docx) 및 한글(.hwpx) 형식 내보내기 |
 | 패키징 | [PyInstaller](https://pyinstaller.org/) 6.x | Python 앱을 단일 `.app` 번들로 패키징 |
 | 다국어 | [gettext](https://docs.python.org/3/library/gettext.html) (표준 라이브러리) | `.po`/`.mo` 파일 기반 번역. 시스템 언어 자동 감지 및 런타임 언어 전환 지원 |
 
