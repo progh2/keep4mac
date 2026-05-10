@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "keep4mac"
-version = "0.1.31"
+version = "0.1.32"
 description = "Google Keep macOS menu bar app"
 requires-python = ">=3.11"
 dependencies = [
@@ -16,6 +16,7 @@ dependencies = [
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "rumps>=0.4.0; sys_platform == 'darwin'",
     "python-docx>=1.1.0",
+    "python-hwpx>=2.9.0",
 ]
 
 [project.scripts]

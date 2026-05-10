@@ -1,5 +1,4 @@
 import base64
-import zipfile as _zipfile
 from html import escape as _he
 from pathlib import Path
 from urllib.parse import quote
@@ -82,162 +81,35 @@ class _CreateNoteThread(QThread):
 def _write_hwpx(path: str, title: str, body: str,
                 checklist: "list[tuple[bool, str]] | None" = None,
                 img_data: bytes | None = None) -> None:
-    """OWPML(KS X 6101) 스펙 기반으로 .hwpx 파일을 생성한다."""
+    """python-hwpx(airmang) 라이브러리로 .hwpx 파일을 생성한다."""
+    from hwpx import HwpxDocument
 
-    _NS = (
-        'xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" '
-        'xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" '
-        'xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" '
-        'xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" '
-        'xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" '
-        'xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" '
-        'xmlns:opf="http://www.idpf.org/2007/opf/"'
-    )
+    doc = HwpxDocument.new()
+    # 스켈레톤에 기본 빈 단락이 하나 있으므로 텍스트로 덮어쓰기
+    first = True
 
-    def _p(text: str, pid: int, cpr: int = 0) -> str:
-        safe = _he(text) if text.strip() else ""
-        return (f'  <hp:p id="{pid}" paraPrIDRef="0" styleIDRef="0">\n'
-                f'    <hp:run charPrIDRef="{cpr}"><hp:t>{safe}</hp:t></hp:run>\n'
-                f'  </hp:p>')
+    def _add(text: str, style_id: int = 0):
+        nonlocal first
+        if first:
+            p = doc.sections[0].paragraphs[0]
+            p.clear_text()
+            p.add_run(text)
+            if style_id:
+                p.style_id_ref = str(style_id)
+            first = False
+        else:
+            doc.add_paragraph(text, style_id_ref=style_id if style_id else None)
 
-    paras: list[str] = []
-    pid = 2  # pid=1 은 섹션 속성 단락에 사용
     if title:
-        paras.append(_p(title, pid, cpr=1)); pid += 1
+        _add(title, style_id=2)  # 개요 1 스타일 (큰 제목)
     if checklist:
         for is_chk, txt in checklist:
-            paras.append(_p(f"{'☑' if is_chk else '☐'} {txt}", pid)); pid += 1
+            _add(f"{'☑' if is_chk else '☐'} {txt}")
     elif body:
         for line in (body.splitlines() or [""]):
-            paras.append(_p(line, pid)); pid += 1
-    if not paras:
-        paras.append(_p("", pid))
+            _add(line)
 
-    section_xml = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
-        f'<hs:sec {_NS}>\n'
-        '  <hp:p id="1" paraPrIDRef="0" styleIDRef="0">\n'
-        '    <hp:run charPrIDRef="0">\n'
-        '      <hp:secPr>\n'
-        '        <hc:pageInfo landscape="0" width="59528" height="84188" gutterType="LEFT_ONLY">\n'
-        '          <hc:margin header="4252" footer="4252" gutter="0"'
-        ' left="8504" right="8504" top="5669" bottom="4252"/>\n'
-        '        </hc:pageInfo>\n'
-        '      </hp:secPr>\n'
-        '      <hp:ctrl><hp:colPr type="NEWSPAPER" layout="LEFT" colCount="1"/></hp:ctrl>\n'
-        '    </hp:run>\n'
-        '  </hp:p>\n'
-        + "\n".join(paras) + "\n"
-        + "</hs:sec>"
-    )
-
-    header_xml = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
-        f'<hh:head {_NS} version="1.5" secCnt="1">\n'
-        '  <hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>\n'
-        '  <hh:refList>\n'
-        '    <hh:fontfaces>\n'
-        '      <hh:fontface lang="HANGUL"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="LATIN"><hh:font id="0" face="Times New Roman" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="HANJA"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="JAPANESE"><hh:font id="0" face="MS Mincho" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="OTHER"><hh:font id="0" face="Times New Roman" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="SYMBOL"><hh:font id="0" face="Symbol" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '      <hh:fontface lang="USER"><hh:font id="0" face="" type="TTF" isEmbedded="0"/></hh:fontface>\n'
-        '    </hh:fontfaces>\n'
-        '    <hh:borderFills>\n'
-        '      <hh:borderFill id="0" threeD="0" shadow="0" centerLine="0" breakCellSepLine="0">\n'
-        '        <hc:slash type="NONE" Crooked="0" isCounter="0"/>\n'
-        '        <hc:backSlash type="NONE" Crooked="0" isCounter="0"/>\n'
-        '        <hc:leftBorder type="NONE" width="0.1mm" color="#000000"/>\n'
-        '        <hc:rightBorder type="NONE" width="0.1mm" color="#000000"/>\n'
-        '        <hc:topBorder type="NONE" width="0.1mm" color="#000000"/>\n'
-        '        <hc:bottomBorder type="NONE" width="0.1mm" color="#000000"/>\n'
-        '        <hc:diagonal type="NONE" width="0.1mm" color="#000000"/>\n'
-        '        <hh:fillBrush/>\n'
-        '      </hh:borderFill>\n'
-        '    </hh:borderFills>\n'
-        '    <hh:charProperties>\n'
-        '      <hh:charPr id="0" height="1000" textColor="#000000" shadeColor="#FFFFFF"'
-        ' useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="0">\n'
-        '        <hh:font hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
-        '        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
-        '        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '      </hh:charPr>\n'
-        '      <hh:charPr id="1" height="1600" textColor="#000000" shadeColor="#FFFFFF"'
-        ' useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="0">\n'
-        '        <hh:font hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '        <hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
-        '        <hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '        <hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/>\n'
-        '        <hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/>\n'
-        '      </hh:charPr>\n'
-        '    </hh:charProperties>\n'
-        '    <hh:tabProperties><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties>\n'
-        '    <hh:numberings/>\n'
-        '    <hh:bullets/>\n'
-        '    <hh:paraProperties>\n'
-        '      <hh:paraPr id="0" tabPrIDRef="0" condense="0" fontLineHeight="0"'
-        ' snapToGrid="1" suppressLineNumbers="0" checked="0">\n'
-        '        <hc:paraShape lineSpaceSort="RATIO" lineSpace="160"'
-        ' paraSpacingEntAuto="0" paraSpacingExtAuto="0"'
-        ' paraSpacingEnt="0" paraSpacingExt="0"'
-        ' indentLeft="0" indentRight="0" indentFirstLine="0" indentHanging="0"'
-        ' outlineLevel="NONE" borderConnect="0" fixedLineHeight="0" lineWrap="BREAK"/>\n'
-        '        <hc:justification horizAlign="JUSTIFY" vertAlign="BASELINE"/>\n'
-        '      </hh:paraPr>\n'
-        '    </hh:paraProperties>\n'
-        '    <hh:styles>\n'
-        '      <hh:style id="0" type="PARA" name="바탕글" engName="Normal"'
-        ' paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langIDRef="1042" lockForm="0"/>\n'
-        '    </hh:styles>\n'
-        '  </hh:refList>\n'
-        '</hh:head>'
-    )
-
-    settings_xml = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
-        f'<ha:HWPApplicationSetting {_NS}>\n'
-        '  <ha:CaretPosition listIDRef="0" paraIDRef="1" pos="0"/>\n'
-        '</ha:HWPApplicationSetting>'
-    )
-
-    content_hpf = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
-        f'<opf:package {_NS} version="" unique-identifier="" id="">\n'
-        '  <opf:metadata><opf:language>ko</opf:language></opf:metadata>\n'
-        '  <opf:manifest>\n'
-        '    <opf:item id="header" href="Contents/header.xml" media-type="application/xml"/>\n'
-        '    <opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/>\n'
-        '    <opf:item id="settings" href="settings.xml" media-type="application/xml"/>\n'
-        '  </opf:manifest>\n'
-        '  <opf:spine>\n'
-        '    <opf:itemref idref="header" linear="yes"/>\n'
-        '    <opf:itemref idref="section0" linear="yes"/>\n'
-        '  </opf:spine>\n'
-        '</opf:package>'
-    )
-
-    container_xml = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n'
-        '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container"\n'
-        '               xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf">\n'
-        '  <ocf:rootfiles>\n'
-        '    <ocf:rootfile full-path="Contents/content.hpf"'
-        ' media-type="application/hwpml-package+xml"/>\n'
-        '  </ocf:rootfiles>\n'
-        '</ocf:container>'
-    )
-
-    with _zipfile.ZipFile(path, 'w', _zipfile.ZIP_DEFLATED) as z:
-        z.writestr("mimetype", "application/hwp+zip", compress_type=_zipfile.ZIP_STORED)
-        z.writestr("META-INF/container.xml", container_xml)
-        z.writestr("Contents/content.hpf", content_hpf)
-        z.writestr("Contents/header.xml", header_xml)
-        z.writestr("Contents/section0.xml", section_xml)
-        z.writestr("settings.xml", settings_xml)
+    doc.save_to_path(path)
 
 
 def _write_docx(path: str, title: str, body: str,
