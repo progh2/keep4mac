@@ -416,7 +416,7 @@ class KeepClient:
         note = self._keep.get(note_id)
         if note:
             note.trash()
-            self._keep.sync()
+            self._notes_memory = [n for n in self._notes_memory if n.id != note_id]
 
     def delete_image(self, note_id: str, image_url: str) -> None:
         """이미지 URL에서 blob_server_id를 추출해 해당 블롭을 삭제한다."""
