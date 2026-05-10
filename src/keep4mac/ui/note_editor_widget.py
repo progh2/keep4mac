@@ -527,20 +527,6 @@ class NoteEditorWidget(QWidget):
         self._revert_btn.clicked.connect(self._on_revert)
         fl.addWidget(self._revert_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self._save_btn = QPushButton(_("Save"))
-        self._save_btn.setMinimumWidth(80)
-        self._save_btn.setStyleSheet("""
-            QPushButton {
-                background: #1a73e8; color: white;
-                border: none; border-radius: 6px;
-                padding: 6px 16px; font-size: 13px; font-weight: 500;
-            }
-            QPushButton:hover { background: #1557b0; }
-            QPushButton:pressed { background: #0d47a1; }
-        """)
-        self._save_btn.clicked.connect(self._on_save)
-        fl.addWidget(self._save_btn, 0, Qt.AlignmentFlag.AlignVCenter)
-
         root.addWidget(footer)
 
     # ── 공개 API ──────────────────────────────────────────────
@@ -552,7 +538,6 @@ class NoteEditorWidget(QWidget):
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._export_btn.setToolTip(_("Export / Share"))
         self._revert_btn.setToolTip(_("Revert"))
-        self._save_btn.setText(_("Save"))
         if self._is_new:
             self._header_label.setText(_("New Note"))
         else:

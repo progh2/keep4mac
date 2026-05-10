@@ -397,6 +397,8 @@ class KeepClient:
         if color is not None:
             note.color = gkeepapi.node.ColorValue(color.value)
         self._keep.sync()
+        model = _to_model(note)
+        self._notes_memory = [model if n.id == note_id else n for n in self._notes_memory]
 
     def update_checklist(self, note_id: str, title: str, items: list[tuple[str, bool]], color: NoteColor | None = None) -> None:
         note = self._keep.get(note_id)
@@ -411,6 +413,8 @@ class KeepClient:
         if color is not None:
             note.color = gkeepapi.node.ColorValue(color.value)
         self._keep.sync()
+        model = _to_model(note)
+        self._notes_memory = [model if n.id == note_id else n for n in self._notes_memory]
 
     def delete_note(self, note_id: str) -> None:
         note = self._keep.get(note_id)
