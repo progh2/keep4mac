@@ -12,6 +12,7 @@ Google Keep macOS 메뉴바 앱. 트레이 아이콘을 클릭하면 Keep 노트
 - **링크 자동 인식** — 노트 내 URL 클릭 시 브라우저 오픈
 - **클립보드 복사** — 노트 카드 호버 시 📋 버튼으로 제목+내용 복사
 - **로그인 자동 시작** — 사이드바 토글로 macOS LaunchAgent 등록/해제
+- **다국어 지원** — 한국어·영어·일본어, 사이드바에서 즉시 전환 가능
 
 ## 인증 방식
 
@@ -27,12 +28,19 @@ keep4mac은 **Playwright Chromium**을 사용해 Google 계정에 로그인합�
 
 ## 설치 (DMG)
 
-1. [Releases](../../releases) 에서 `keep4mac-x.x.x.dmg` 다운로드
+1. [Releases](../../releases) 에서 `keep4mac-[버전].dmg` 다운로드
 2. DMG를 열고 `keep4mac.app`을 Applications 폴더로 드래그
-3. 터미널에서 아래 명령어 실행:
-   ```bash
-   xattr -rd com.apple.quarantine /Applications/keep4mac.app && open /Applications/keep4mac.app
-   ```
+
+### 최초 실행 시 필수 명령어
+
+macOS는 인터넷에서 다운로드한 앱을 **Gatekeeper**로 차단합니다. Apple Developer 인증서 없이 배포된 앱은 별도의 허용 절차가 필요합니다. 아래 명령어를 터미널에서 실행해 격리 속성을 해제한 뒤 앱을 열어주세요.
+
+```bash
+xattr -rd com.apple.quarantine /Applications/keep4mac.app && open /Applications/keep4mac.app
+```
+
+- `xattr -rd com.apple.quarantine` : macOS가 붙여놓은 격리(quarantine) 플래그를 제거합니다
+- 이 명령은 **최초 1회**만 실행하면 되며, 이후에는 평소처럼 앱을 클릭해서 실행할 수 있습니다
 
 ## 개발 환경 실행
 
@@ -41,6 +49,8 @@ keep4mac은 **Playwright Chromium**을 사용해 Google 계정에 로그인합�
 pip install -e .
 
 # 2. Playwright Chromium 설치 (최초 1회)
+#    keep4mac은 Google 로그인에 Playwright Chromium을 사용합니다.
+#    앱 실행 전에 반드시 한 번 실행해야 합니다.
 python -m playwright install chromium
 
 # 3. 실행
@@ -52,7 +62,7 @@ python -m keep4mac
 ```bash
 # PyInstaller + 코드서명 + DMG 생성
 bash build_dmg.sh
-# → dist/keep4mac-0.1.0.dmg
+# → dist/keep4mac-[버전].dmg
 ```
 
 > **빌드 요구사항**: `pip install pyinstaller pyqt6==6.7.1 playwright`  
@@ -61,27 +71,26 @@ bash build_dmg.sh
 
 ## 기술 스택
 
-| 구분 | 라이브러리 |
-|------|-----------|
-| GUI | PyQt6 6.7.1 |
-| 메뉴바 | rumps + PyObjC |
-| Keep API | gkeepapi (SAPISIDHASH 인증) |
-| 브라우저 로그인 | Playwright (Chromium) |
-| 세션 저장 | keyring (macOS Keychain) |
-| 패키징 | PyInstaller 6.x |
+| 구분 | 라이브러리 | 설명 |
+|------|-----------|------|
+| GUI | [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) 6.7.1 | Qt6 기반 크로스플랫폼 GUI 프레임워크. 노트 목록·에디터·로그인 등 모든 UI에 사용 |
+| 메뉴바 | [rumps](https://github.com/jaredks/rumps) | macOS 메뉴바 앱을 간편하게 만들어주는 Python 래퍼 |
+| macOS 네이티브 | [PyObjC](https://pyobjc.readthedocs.io/) | Objective-C/AppKit API를 Python에서 직접 호출. 트레이 클릭·아이콘·CALayer에 사용 |
+| Keep API | [gkeepapi](https://github.com/kiwiz/gkeepapi) | 비공식 Google Keep API 클라이언트. SAPISIDHASH 인증 방식으로 연동 |
+| 브라우저 로그인 | [Playwright](https://playwright.dev/python/) | Chromium 제어로 Google 계정 로그인 처리. 자동화된 쿠키 추출에 사용 |
+| 세션 저장 | [keyring](https://github.com/jaraco/keyring) | macOS Keychain에 인증 정보를 안전하게 저장·불러오기 |
+| 패키징 | [PyInstaller](https://pyinstaller.org/) 6.x | Python 앱을 단일 `.app` 번들로 패키징 |
+| 다국어 | [gettext](https://docs.python.org/3/library/gettext.html) (표준 라이브러리) | `.po`/`.mo` 파일 기반 번역. 시스템 언어 자동 감지 및 런타임 언어 전환 지원 |
 
-## 개발 상태
+## 번역 기여
 
-| 기능 | 상태 |
-|------|------|
-| 메뉴바 상주 + 트레이 아이콘 | ✅ 완료 |
-| 트레이 직접 클릭으로 패널 열기 | ✅ 완료 |
-| Playwright 브라우저 로그인 | ✅ 완료 |
-| 노트 목록 조회 (이미지 포함) | ✅ 완료 |
-| 노트 작성 / 수정 / 삭제 | ✅ 완료 |
-| 체크리스트 노트 | ✅ 완료 |
-| 링크 자동 인식 | ✅ 완료 |
-| 로그인 자동 시작 (LaunchAgent) | ✅ 완료 |
-| DMG 배포 빌드 | ✅ 완료 |
-| 클립보드 복사 버튼 | ✅ 완료 |
-| 백그라운드 자동 동기화 | ➖ 구현 안 함 |
+keep4mac은 현재 한국어·영어·일본어를 지원합니다. 새로운 언어를 추가하거나 기존 번역을 개선하고 싶으신 분은 언제든지 기여해주세요!
+
+- 번역 파일 위치: `i18n/{언어코드}/LC_MESSAGES/keep4mac.po`
+- 자세한 기여 방법은 [CONTRIBUTING_TRANSLATION.md](CONTRIBUTING_TRANSLATION.md)를 참고해주세요
+
+기여자분의 이름은 릴리즈 노트에 감사히 기록됩니다. 🙏
+
+## 라이선스
+
+[GNU GPL v3](LICENSE)
