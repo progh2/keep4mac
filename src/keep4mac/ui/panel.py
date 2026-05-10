@@ -143,7 +143,7 @@ class MainPanel(QWidget):
         self._show_notes()
 
     def _on_sync(self):
-        self._notes_w.load_notes()
+        self._notes_w.load_notes(force_sync=True)
 
     def _on_open_web(self):
         QDesktopServices.openUrl(QUrl("https://keep.google.com"))

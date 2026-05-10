@@ -19,6 +19,8 @@ _KEY_SAPISID = "sapisid"
 _KEY_EMAIL = "email"
 _SESSION_PATH = Path.home() / ".config" / "keep4mac" / "session.json"
 _IMAGE_CACHE_DIR = Path.home() / ".config" / "keep4mac" / "image_cache"
+_NOTES_CACHE_PATH = Path.home() / ".config" / "keep4mac" / "notes_cache.json"
+_SYNC_INTERVAL = 300  # 초: 5분 이내 재동기화 생략
 
 # keep.google.com이 실제로 사용하는 API 엔드포인트 (SAPISIDHASH 인증 사용)
 _BROWSER_API_URL = "https://notes-pa.clients6.google.com/notes/v1/"
@@ -127,6 +129,35 @@ def _to_model(note) -> NoteModel:
     )
 
 
+# ── 노트 캐시 직렬화 ──────────────────────────────────────────
+
+
+def _note_to_dict(n: "NoteModel") -> dict:
+    return {
+        "id": n.id,
+        "title": n.title,
+        "text": n.text,
+        "note_type": n.note_type.value,
+        "pinned": n.pinned,
+        "color": n.color.value,
+        "checklist_items": [{"text": i.text, "checked": i.checked} for i in n.checklist_items],
+        "image_url": n.image_url,
+    }
+
+
+def _note_from_dict(d: dict) -> "NoteModel":
+    return NoteModel(
+        id=d["id"],
+        title=d.get("title", ""),
+        text=d.get("text", ""),
+        note_type=NoteType(d.get("note_type", "text")),
+        pinned=d.get("pinned", False),
+        color=NoteColor(d.get("color", "DEFAULT")),
+        checklist_items=[ChecklistItem(**i) for i in d.get("checklist_items", [])],
+        image_url=d.get("image_url"),
+    )
+
+
 # ── 예외 ───────────────────────────────────────────────────────
 
 
@@ -148,6 +179,8 @@ class KeepClient:
         self._logged_in = False
         self._sapisid: str = ""
         self._cookies: dict = {}
+        self._last_sync_time: float = 0.0
+        self._notes_memory: list[NoteModel] = []
 
     # ── 인증 ──────────────────────────────────────────────────
 
@@ -243,11 +276,17 @@ class KeepClient:
 
     # ── 동기화 ─────────────────────────────────────────────────
 
+    @property
+    def needs_sync(self) -> bool:
+        """마지막 동기화로부터 _SYNC_INTERVAL 초 이상 경과했으면 True."""
+        return time.time() - self._last_sync_time > _SYNC_INTERVAL
+
     def sync(self) -> None:
         if not self._logged_in:
             raise AuthError("로그인 필요")
         try:
             self._keep.sync()
+            self._last_sync_time = time.time()
         except Exception as e:
             raise SyncError(f"동기화 실패: {e}") from e
 
@@ -259,7 +298,38 @@ class KeepClient:
             0 if n.pinned else 1,
             -(n.timestamps.updated.timestamp() if n.timestamps.updated else 0),
         ))
-        return [_to_model(n) for n in raw]
+        notes = [_to_model(n) for n in raw]
+        self._notes_memory = notes
+        self._save_notes_cache(notes)
+        return notes
+
+    def get_cached_notes(self) -> list[NoteModel]:
+        """네트워크 없이 메모리 캐시에서 즉시 반환."""
+        return self._notes_memory
+
+    def load_disk_cache(self) -> list[NoteModel]:
+        """앱 시작 시 디스크 캐시에서 노트를 복원한다."""
+        if not _NOTES_CACHE_PATH.exists():
+            return []
+        try:
+            data = json.loads(_NOTES_CACHE_PATH.read_text(encoding="utf-8"))
+            notes = [_note_from_dict(d) for d in data]
+            self._notes_memory = notes
+            logger.info("디스크 캐시 로드: %d개 노트", len(notes))
+            return notes
+        except Exception as e:
+            logger.warning("노트 캐시 로드 실패: %s", e)
+            return []
+
+    def _save_notes_cache(self, notes: list[NoteModel]) -> None:
+        try:
+            _NOTES_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _NOTES_CACHE_PATH.write_text(
+                json.dumps([_note_to_dict(n) for n in notes], ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            logger.warning("노트 캐시 저장 실패: %s", e)
 
     def fetch_image(self, url: str) -> bytes | None:
         cached = _cache_path(url)

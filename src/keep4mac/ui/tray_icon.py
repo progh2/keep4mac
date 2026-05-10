@@ -72,6 +72,7 @@ class TrayApp(rumps.App):
         self._client = KeepClient()
         if self._client.resume():
             logger.info("자동 로그인 성공")
+            self._client.load_disk_cache()  # 앱 시작 시 디스크 캐시 선 로드
 
         self._panel = MainPanel(self._client, quit_callback=self._quit_from_panel)
 

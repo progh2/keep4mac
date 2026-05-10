@@ -1,4 +1,6 @@
-from PyQt6.QtCore import Qt, pyqtSignal
+import logging
+
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame, QLabel, QLineEdit,
     QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
@@ -9,6 +11,28 @@ from keep4mac.core.models import NoteModel
 from keep4mac.i18n import gettext as _
 from keep4mac.ui.note_item_widget import NoteItemWidget
 
+logger = logging.getLogger(__name__)
+
+
+class _SyncThread(QThread):
+    """백그라운드에서 Keep 동기화 후 노트 목록을 반환한다."""
+    done = pyqtSignal(list)   # list[NoteModel]
+    error = pyqtSignal(str)
+
+    def __init__(self, client: KeepClient):
+        super().__init__()
+        self._client = client
+
+    def run(self):
+        try:
+            self._client.sync()
+            notes = self._client.get_notes()
+            self.done.emit(notes)
+        except SyncError as e:
+            self.error.emit(str(e))
+        except Exception as e:
+            self.error.emit(str(e))
+
 
 class NoteListWidget(QWidget):
     note_selected = pyqtSignal(str)   # note_id
@@ -17,6 +41,8 @@ class NoteListWidget(QWidget):
         super().__init__()
         self._client = client
         self._all_notes: list[NoteModel] = []
+        self._sync_thread: _SyncThread | None = None
+        self._syncing = False
         self._build_ui()
 
     # ── UI 구성 ───────────────────────────────────────────────
@@ -67,14 +93,41 @@ class NoteListWidget(QWidget):
         self._search.setPlaceholderText(_("🔍  Search…"))
         self._render(self._all_notes)
 
-    def load_notes(self):
-        """Keep 서버 동기화 후 목록 갱신."""
-        try:
-            self._client.sync()
-        except SyncError:
-            pass
-        self._all_notes = self._client.get_notes()
-        self._render(self._all_notes)
+    def load_notes(self, force_sync: bool = False):
+        """캐시로 즉시 표시 후 백그라운드에서 동기화한다.
+
+        force_sync=True 이면 쿨다운을 무시하고 즉시 동기화한다 (↻ 버튼 전용).
+        """
+        # 1단계: 메모리 캐시로 즉시 표시
+        cached = self._client.get_cached_notes()
+        if cached:
+            self._all_notes = cached
+            self._render(cached)
+
+        # 2단계: 동기화 필요 여부 확인
+        if not force_sync and not self._client.needs_sync:
+            return
+
+        # 3단계: 이미 동기화 중이면 스킵
+        if self._syncing:
+            return
+
+        self._syncing = True
+        self._sync_thread = _SyncThread(self._client)
+        self._sync_thread.done.connect(self._on_sync_done)
+        self._sync_thread.error.connect(self._on_sync_error)
+        self._sync_thread.finished.connect(self._on_sync_finished)
+        self._sync_thread.start()
+
+    def _on_sync_done(self, notes: list[NoteModel]):
+        self._all_notes = notes
+        self._render(notes)
+
+    def _on_sync_error(self, msg: str):
+        logger.warning("백그라운드 동기화 실패: %s", msg)
+
+    def _on_sync_finished(self):
+        self._syncing = False
 
     # ── 검색 ─────────────────────────────────────────────────
 
