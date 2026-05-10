@@ -89,7 +89,7 @@ keep4mac은 현재 한국어·영어·일본어를 지원합니다. 새로운 �
 - 번역 파일 위치: `i18n/{언어코드}/LC_MESSAGES/keep4mac.po`
 - 자세한 기여 방법은 [CONTRIBUTING_TRANSLATION.md](CONTRIBUTING_TRANSLATION.md)를 참고해주세요
 
-기여자분의 이름은 릴리즈 노트에 감사히 기록됩니다. 🙏
+기여자분의 이름은 [CONTRIBUTORS.md](CONTRIBUTORS.md)에 기록됩니다. 🙏
 
 ## 라이선스
 
