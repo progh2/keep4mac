@@ -228,9 +228,9 @@ class NoteEditorWidget(QWidget):
         self._refresh_palette()
         self._refresh_pin_btn()
 
-        save_btn = QPushButton(_("Save"))
-        save_btn.setMinimumWidth(80)
-        save_btn.setStyleSheet("""
+        self._save_btn = QPushButton(_("Save"))
+        self._save_btn.setMinimumWidth(80)
+        self._save_btn.setStyleSheet("""
             QPushButton {
                 background: #1a73e8; color: white;
                 border: none; border-radius: 6px;
@@ -239,12 +239,23 @@ class NoteEditorWidget(QWidget):
             QPushButton:hover { background: #1557b0; }
             QPushButton:pressed { background: #0d47a1; }
         """)
-        save_btn.clicked.connect(self._on_save)
-        fl.addWidget(save_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._save_btn.clicked.connect(self._on_save)
+        fl.addWidget(self._save_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
         root.addWidget(footer)
 
     # ── 공개 API ──────────────────────────────────────────────
+
+    def retranslate_ui(self):
+        self._title_edit.setPlaceholderText(_("Title"))
+        self._body_edit.setPlaceholderText(_("Enter note content…"))
+        self._delete_btn.setToolTip(_("Delete"))
+        self._pin_btn.setToolTip(_("Pin / Unpin"))
+        self._save_btn.setText(_("Save"))
+        if self._is_new:
+            self._header_label.setText(_("New Note"))
+        else:
+            self._header_label.setText(_("Edit Note"))
 
     def load_note(self, note_id: str):
         note = self._client.get_note(note_id)

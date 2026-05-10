@@ -63,6 +63,10 @@ class NoteListWidget(QWidget):
 
     # ── 데이터 ────────────────────────────────────────────────
 
+    def retranslate_ui(self):
+        self._search.setPlaceholderText(_("🔍  Search…"))
+        self._render(self._all_notes)
+
     def load_notes(self):
         """Keep 서버 동기화 후 목록 갱신."""
         try:

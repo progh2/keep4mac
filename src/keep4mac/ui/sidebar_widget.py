@@ -59,12 +59,12 @@ class SidebarWidget(QWidget):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        for icon, label, signal in [
-            ("🗒", _("New Note"), self.new_note_requested),
-            ("↻", _("Sync"), self.sync_requested),
-            ("🌐", _("Web Keep"), self.open_web_requested),
-        ]:
-            layout.addWidget(self._make_btn(icon, label, signal))
+        self._new_note_btn = self._make_btn("🗒", _("New Note"), self.new_note_requested)
+        self._sync_btn     = self._make_btn("↻",  _("Sync"),     self.sync_requested)
+        self._web_btn      = self._make_btn("🌐", _("Web Keep"), self.open_web_requested)
+
+        for btn in (self._new_note_btn, self._sync_btn, self._web_btn):
+            layout.addWidget(btn)
 
         layout.addStretch()
 
@@ -79,12 +79,23 @@ class SidebarWidget(QWidget):
         self._lang_btn.clicked.connect(self._on_lang_click)
         layout.addWidget(self._lang_btn)
 
-        for icon, label, signal in [
-            ("?", _("About"), self.about_requested),
-            ("↩", _("Logout"), self.logout_requested),
-            ("✕", _("Quit"), self.quit_requested),
-        ]:
-            layout.addWidget(self._make_btn(icon, label, signal))
+        self._about_btn  = self._make_btn("?",  _("About"),   self.about_requested)
+        self._logout_btn = self._make_btn("↩",  _("Logout"),  self.logout_requested)
+        self._quit_btn   = self._make_btn("✕",  _("Quit"),    self.quit_requested)
+
+        for btn in (self._about_btn, self._logout_btn, self._quit_btn):
+            layout.addWidget(btn)
+
+    def retranslate_ui(self):
+        """언어 변경 후 모든 버튼 텍스트를 즉시 갱신한다."""
+        self._new_note_btn.setText(f"🗒\n{_('New Note')}")
+        self._sync_btn.setText(f"↻\n{_('Sync')}")
+        self._web_btn.setText(f"🌐\n{_('Web Keep')}")
+        self._lang_btn.setText(f"🌏\n{_('Language')}")
+        self._about_btn.setText(f"?\n{_('About')}")
+        self._logout_btn.setText(f"↩\n{_('Logout')}")
+        self._quit_btn.setText(f"✕\n{_('Quit')}")
+        self._refresh_autostart_btn()
 
     def _refresh_autostart_btn(self):
         enabled = autostart.is_enabled()
@@ -139,5 +150,6 @@ class SidebarWidget(QWidget):
         btn = QPushButton(f"{icon}\n{label}")
         btn.setFixedSize(52, 50)
         btn.setStyleSheet(_BTN_CSS)
-        btn.clicked.connect(lambda: signal.emit())
+        if signal is not None:
+            btn.clicked.connect(lambda: signal.emit())
         return btn

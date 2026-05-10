@@ -7,7 +7,6 @@ from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPainterPath, QPen, 
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from keep4mac.api.keep_client import KeepClient
-from keep4mac.i18n import gettext as _
 import keep4mac.i18n as i18n
 from keep4mac.ui.about_dialog import AboutDialog
 from keep4mac.ui.login_widget import LoginWidget
@@ -159,13 +158,17 @@ class MainPanel(QWidget):
         self._stack.setCurrentIndex(_IDX_LOGIN)
 
     def _on_lang_changed(self, lang: str):
+        i18n.setup()
+        self._sidebar.retranslate_ui()
+        self._notes_w.retranslate_ui()
+        self._editor_w.retranslate_ui()
         lang_name = i18n.SUPPORTED_LANGS.get(lang, lang)
-        self._show_toast(_("Language changed. Restart to apply.").replace(
-            "Language changed. Restart to apply.",
-            f"{lang_name}(으)로 변경됐습니다. 앱을 재시작하면 적용됩니다."
+        msg = (
+            f"{lang_name}(으)로 변경됐습니다."
             if lang == "ko" else
-            f"Language changed to {lang_name}. Restart to apply."
-        ))
+            f"Language changed to {lang_name}."
+        )
+        self._show_toast(msg)
 
     def _show_toast(self, message: str):
         toast = QLabel(message, self)
