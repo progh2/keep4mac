@@ -139,3 +139,12 @@ msgstr "카카오톡 열리는 중…"
 
 msgid "Copied to clipboard. Open KakaoTalk to share."
 msgstr "클립보드에 복사됐습니다. 카카오톡을 열어 붙여넣기 하세요."
+
+msgid "Translating…"
+msgstr "번역 중…"
+
+msgid "Creating note…"
+msgstr "노트 생성 중…"
+
+msgid "Failed to create note"
+msgstr "노트 생성 실패"

@@ -139,3 +139,12 @@ msgstr ""
 
 msgid "Copied to clipboard. Open KakaoTalk to share."
 msgstr ""
+
+msgid "Translating…"
+msgstr ""
+
+msgid "Creating note…"
+msgstr ""
+
+msgid "Failed to create note"
+msgstr ""

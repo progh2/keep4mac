@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from uuid import getnode as get_mac
@@ -101,6 +102,9 @@ def _to_model(note) -> NoteModel:
     color = _parse_color(note.color)
     image_url = _find_image_url(note)
 
+    ts = getattr(note, "timestamps", None)
+    updated = (ts.updated if ts and ts.updated else None)
+
     if isinstance(note, gkeepapi.node.List):
         items = [
             ChecklistItem(text=item.text, checked=item.checked)
@@ -116,6 +120,7 @@ def _to_model(note) -> NoteModel:
             color=color,
             checklist_items=items,
             image_url=image_url,
+            updated=updated,
         )
 
     return NoteModel(
@@ -126,6 +131,7 @@ def _to_model(note) -> NoteModel:
         pinned=note.pinned,
         color=color,
         image_url=image_url,
+        updated=updated,
     )
 
 
@@ -142,10 +148,13 @@ def _note_to_dict(n: "NoteModel") -> dict:
         "color": n.color.value,
         "checklist_items": [{"text": i.text, "checked": i.checked} for i in n.checklist_items],
         "image_url": n.image_url,
+        "updated": n.updated.isoformat() if n.updated else None,
     }
 
 
 def _note_from_dict(d: dict) -> "NoteModel":
+    updated_str = d.get("updated")
+    updated = datetime.fromisoformat(updated_str) if updated_str else None
     return NoteModel(
         id=d["id"],
         title=d.get("title", ""),
@@ -155,6 +164,7 @@ def _note_from_dict(d: dict) -> "NoteModel":
         color=NoteColor(d.get("color", "DEFAULT")),
         checklist_items=[ChecklistItem(**i) for i in d.get("checklist_items", [])],
         image_url=d.get("image_url"),
+        updated=updated,
     )
 
 
@@ -296,7 +306,7 @@ class KeepClient:
         raw = [n for n in self._keep.all() if not n.trashed and not n.archived]
         raw.sort(key=lambda n: (
             0 if n.pinned else 1,
-            -(n.timestamps.updated.timestamp() if n.timestamps.updated else 0),
+            -(n.timestamps.updated.timestamp() if n.timestamps and n.timestamps.updated else 0),
         ))
         notes = [_to_model(n) for n in raw]
         self._notes_memory = notes
@@ -363,8 +373,10 @@ class KeepClient:
         note = self._keep.createNote(title, text)
         note.color = gkeepapi.node.ColorValue(color.value)
         note.pinned = pinned
-        self._keep.sync()
-        return _to_model(note)
+        model = _to_model(note)
+        model.updated = datetime.now(timezone.utc)
+        self._notes_memory = [model] + self._notes_memory
+        return model
 
     def toggle_pin(self, note_id: str) -> bool:
         """핀 상태를 토글하고 새 상태를 반환한다."""

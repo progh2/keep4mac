@@ -52,6 +52,28 @@ class _TranslateThread(QThread):
         except Exception as e:
             self.error.emit(str(e))
 
+
+class _CreateNoteThread(QThread):
+    """번역된 노트를 백그라운드에서 Google Keep에 생성하고 동기화한다."""
+    done = pyqtSignal()
+    error = pyqtSignal(str)
+
+    def __init__(self, client, title: str, content: str, color):
+        super().__init__()
+        self._client = client
+        self._title = title
+        self._content = content
+        self._color = color
+
+    def run(self):
+        try:
+            self._client.create_note(self._title, self._content, self._color)
+            self._client.sync()
+            self.done.emit()
+        except Exception as e:
+            self.error.emit(str(e))
+
+
 # 색상 팔레트 순서 (DEFAULT는 흰색 맨 앞)
 _PALETTE = [
     NoteColor.DEFAULT, NoteColor.RED, NoteColor.ORANGE, NoteColor.YELLOW,
@@ -610,7 +632,7 @@ class NoteEditorWidget(QWidget):
         title, body = self._note_content()
         filename = f"{title}.md" if title else f"note_{(self._note_id or 'new')[:8]}.md"
         default = str(Path.home() / "Downloads" / filename)
-        path, _ = QFileDialog.getSaveFileName(
+        path, _filter = QFileDialog.getSaveFileName(
             self, _("Save as Markdown"), default, "Markdown (*.md);;All files (*)"
         )
         if not path:
@@ -642,12 +664,8 @@ class NoteEditorWidget(QWidget):
         title, body = self._note_content()
         text = f"{title}\n\n{body}".strip() if title else body
         QApplication.clipboard().setText(text)
-        kakao_url = QUrl(f"kakaotalk://send?text={quote(text)}")
-        opened = QDesktopServices.openUrl(kakao_url)
-        if opened:
-            self._show_export_toast(_("Opening KakaoTalk…"))
-        else:
-            self._show_export_toast(_("Copied to clipboard. Open KakaoTalk to share."))
+        QDesktopServices.openUrl(QUrl("kakaotalk://"))
+        self._show_export_toast(_("Copied to clipboard. Open KakaoTalk to share."))
 
     # ── #32 번역 새 노트 ─────────────────────────────────────
 
@@ -655,31 +673,49 @@ class NoteEditorWidget(QWidget):
         title, content = self._note_content()
         source = i18n.current_lang()
         self._export_btn.setEnabled(False)
+        self._show_export_toast(f"⏳  {_('Translating…')}")
         self._translate_thread = _TranslateThread(title, content, source, target_lang)
         self._translate_thread.done.connect(
             lambda t, c: self._on_translate_done(t, c, target_lang)
         )
         self._translate_thread.error.connect(
-            lambda msg: self._show_export_toast(f"⚠ {_('Translation failed')}: {msg[:60]}")
-        )
-        self._translate_thread.finished.connect(
-            lambda: self._export_btn.setEnabled(True)
+            lambda msg: self._on_translate_error(msg)
         )
         self._translate_thread.start()
 
+    def _on_translate_error(self, msg: str):
+        self._export_btn.setEnabled(True)
+        self._show_export_toast(f"⚠  {_('Translation failed')}: {msg[:60]}", duration=5000)
+
     def _on_translate_done(self, t_title: str, t_content: str, lang_code: str):
         prefix = f"[{lang_code.upper()}] "
-        self._client.create_note(
-            prefix + t_title if t_title else prefix.strip(),
-            t_content,
-            self._current_color,
+        title = prefix + t_title if t_title else prefix.strip()
+        self._show_export_toast(f"📝  {_('Creating note…')}")
+        self._create_note_thread = _CreateNoteThread(
+            self._client, title, t_content, self._current_color
         )
-        self.back_requested.emit()
+        self._create_note_thread.done.connect(self.back_requested.emit)
+        self._create_note_thread.error.connect(
+            lambda msg: self._on_create_note_error(msg)
+        )
+        self._create_note_thread.finished.connect(
+            lambda: self._export_btn.setEnabled(True)
+        )
+        self._create_note_thread.start()
+
+    def _on_create_note_error(self, msg: str):
+        self._show_export_toast(f"⚠  {_('Failed to create note')}: {msg[:60]}", duration=5000)
 
     # ── 내부 토스트 ──────────────────────────────────────────
 
-    def _show_export_toast(self, message: str):
+    def _show_export_toast(self, message: str, duration: int = 2500):
+        if hasattr(self, "_toast") and self._toast is not None:
+            try:
+                self._toast.deleteLater()
+            except RuntimeError:
+                pass
         toast = QLabel(message, self)
+        self._toast = toast
         toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
         toast.setStyleSheet("""
             QLabel {
@@ -693,4 +729,4 @@ class NoteEditorWidget(QWidget):
         toast.move((self.width() - w) // 2, self.height() - toast.sizeHint().height() - 20)
         toast.show()
         toast.raise_()
-        QTimer.singleShot(2500, toast.deleteLater)
+        QTimer.singleShot(duration, toast.deleteLater)

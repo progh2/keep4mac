@@ -139,3 +139,12 @@ msgstr "カカオトークを起動中…"
 
 msgid "Copied to clipboard. Open KakaoTalk to share."
 msgstr "クリップボードにコピーしました。カカオトークを開いて貼り付けてください。"
+
+msgid "Translating…"
+msgstr "翻訳中…"
+
+msgid "Creating note…"
+msgstr "ノートを作成中…"
+
+msgid "Failed to create note"
+msgstr "ノートの作成に失敗しました"
