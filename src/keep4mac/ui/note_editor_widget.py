@@ -79,16 +79,6 @@ class NoteEditorWidget(QWidget):
         )
         hl.addWidget(self._header_label, 1)
 
-        self._delete_btn = QPushButton("✕")
-        self._delete_btn.setFixedSize(32, 32)
-        self._delete_btn.setToolTip(_("Delete"))
-        self._delete_btn.setStyleSheet("""
-            QPushButton { background: transparent; color: white; border: none; font-size: 15px; }
-            QPushButton:hover { background: rgba(255,255,255,0.2); border-radius: 16px; }
-        """)
-        self._delete_btn.clicked.connect(self._on_delete)
-        hl.addWidget(self._delete_btn)
-
         root.addWidget(header)
 
         # 본문
@@ -223,6 +213,21 @@ class NoteEditorWidget(QWidget):
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._pin_btn.clicked.connect(self._on_pin_toggle)
         fl.addWidget(self._pin_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        self._delete_btn = QPushButton("✕")
+        self._delete_btn.setFixedSize(32, 32)
+        self._delete_btn.setToolTip(_("Delete"))
+        self._delete_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #c5221f;
+                border: 1.5px solid #c5221f; border-radius: 8px;
+                font-size: 15px; font-weight: 600;
+            }
+            QPushButton:hover { background: #fce8e6; }
+            QPushButton:pressed { background: #f5c6c5; }
+        """)
+        self._delete_btn.clicked.connect(self._on_delete)
+        fl.addWidget(self._delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
         fl.addStretch()
         self._refresh_palette()

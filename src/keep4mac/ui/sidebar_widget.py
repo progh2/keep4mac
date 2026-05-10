@@ -155,22 +155,19 @@ class SidebarWidget(QWidget):
 
     @staticmethod
     def _wrap_label(label: str) -> str:
-        """52px 사이드바 버튼 너비에 맞게 라벨 텍스트를 자동 줄바꿈한다."""
-        def text_units(s: str) -> int:
-            return sum(2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1 for c in s)
+        """52px 사이드바 버튼에 맞게 라벨 텍스트를 자동 줄바꿈한다.
+        macOS 10px 폰트 실측 기준: CJK ≈ 12px, ASCII ≈ 7px."""
+        def char_px(c: str) -> int:
+            return 12 if unicodedata.east_asian_width(c) in ('W', 'F') else 7
 
-        MAX_UNITS = 8  # 52px - 4px 패딩 ≈ 48px 콘텐츠 너비 기준
-        if text_units(label) <= MAX_UNITS:
+        MAX_PX = 48  # 52px 버튼 - 좌우 패딩 4px = 콘텐츠 48px
+        total_px = sum(char_px(c) for c in label)
+        if total_px <= MAX_PX:
             return label
         if ' ' in label:
             return '\n'.join(label.split(' ', 1))
-        target = text_units(label) // 2
-        units = 0
-        for i, c in enumerate(label):
-            units += 2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1
-            if units >= target:
-                return label[:i + 1] + '\n' + label[i + 1:]
-        return label
+        mid = len(label) // 2
+        return label[:mid] + '\n' + label[mid:]
 
     def _make_btn(self, icon: str, label: str, signal) -> QPushButton:
         btn = QPushButton(f"{icon}\n{self._wrap_label(label)}")
