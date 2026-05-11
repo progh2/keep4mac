@@ -1,7 +1,6 @@
-import ctypes
+import sys
 from typing import Callable
 
-import objc
 from PyQt6.QtCore import Qt, QPoint, QRectF, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPainterPath, QPen, QScreen
 from PyQt6.QtWidgets import (
@@ -166,9 +165,13 @@ class MainPanel(QWidget):
         painter.drawPath(path)
 
     def showEvent(self, event):
-        """CALayer로 자식 위젯까지 둥글게 클리핑하고 그림자를 추가한다."""
+        """CALayer로 자식 위젯까지 둥글게 클리핑하고 그림자를 추가한다 (macOS 전용)."""
         super().showEvent(event)
+        if sys.platform != "darwin":
+            return
         try:
+            import ctypes
+            import objc
             ns_view = objc.objc_object(c_void_p=ctypes.c_void_p(int(self.winId())))
             ns_view.setWantsLayer_(True)
             layer = ns_view.layer()

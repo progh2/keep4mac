@@ -1,17 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-import sys
-import os
+# Windows PyInstaller 스펙 — macOS BUNDLE 없음
 from pathlib import Path
 from PyInstaller.utils.hooks import copy_metadata
-import PyQt6 as _PyQt6
 
 SRC = str(Path("src").resolve())
-# pip 설치 PyQt6 플러그인 경로 — framework 형식이므로 번들 내 Qt6 libs와 호환
-PYQT6_PLUGINS = os.path.join(os.path.dirname(_PyQt6.__file__), "Qt6", "plugins")
 
-# importlib.metadata 를 사용하는 패키지들의 dist-info 포함
 _metadata = []
-for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "rumps", "PIL"]:
+for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "pystray", "PIL"]:
     try:
         _metadata += copy_metadata(_pkg)
     except Exception:
@@ -26,17 +21,11 @@ a = Analysis(
         ("i18n", "i18n"),
     ] + _metadata,
     hiddenimports=[
-        "objc",
-        "AppKit",
-        "Foundation",
-        "Quartz",
-        "CoreFoundation",
-        "rumps",
         "PyQt6.QtCore",
         "PyQt6.QtGui",
         "PyQt6.QtWidgets",
         "keyring.backends",
-        "keyring.backends.macOS",
+        "keyring.backends.Windows",
         "pkg_resources.py2_warn",
         "playwright.sync_api",
         "playwright.async_api",
@@ -45,11 +34,17 @@ a = Analysis(
         "_ssl",
         "gpsoauth",
         "gpsoauth.google",
+        "pystray",
+        "pystray._win32",
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "winreg",
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=["rthook_qt.py"],
-    excludes=["tkinter", "unittest"],
+    excludes=["tkinter", "unittest", "rumps", "objc", "AppKit"],
     noarchive=False,
     optimize=0,
 )
@@ -66,10 +61,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,
+    console=False,   # 콘솔 창 없음
     disable_windowed_traceback=False,
-    codesign_identity=None,
-    entitlements_file=None,
 )
 
 coll = COLLECT(
@@ -80,19 +73,4 @@ coll = COLLECT(
     upx=False,
     upx_exclude=[],
     name="keep4mac",
-)
-
-app = BUNDLE(
-    coll,
-    name="keep4mac.app",
-    bundle_identifier="com.keep4mac.app",
-    version="0.1.45",
-    info_plist={
-        "LSUIElement": True,          # 메뉴바 앱 — Dock 숨김
-        "CFBundleName": "keep4mac",
-        "CFBundleDisplayName": "keep4mac",
-        "CFBundleShortVersionString": "0.1.45",
-        "NSHighResolutionCapable": True,
-        "NSAppleEventsUsageDescription": "Google Keep 로그인에 사용됩니다.",
-    },
 )

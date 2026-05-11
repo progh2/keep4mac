@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-macos:
     runs-on: macos-latest
 
     steps:
@@ -35,8 +35,48 @@ jobs:
       - name: Build DMG
         run: bash build_dmg.sh
 
-      - name: Create GitHub Release
+      - name: Upload macOS release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.dmg
           generate_release_notes: true
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install "pyinstaller>=6.0" "pyqt6==6.7.1"
+
+      - name: Compile .po → .mo
+        shell: pwsh
+        run: |
+          foreach ($lang in @("ko", "en", "ja")) {
+            msgfmt "i18n/$lang/LC_MESSAGES/keep4mac.po" `
+                   -o "i18n/$lang/LC_MESSAGES/keep4mac.mo"
+          }
+
+      - name: Build EXE
+        run: python -m PyInstaller keep4mac_win.spec --noconfirm
+
+      - name: Package ZIP
+        shell: pwsh
+        run: |
+          $ver = python -c "from keep4mac import __version__; print(__version__)"
+          Compress-Archive -Path dist/keep4mac `
+                           -DestinationPath "dist/keep4mac-$ver-win.zip" -Force
+
+      - name: Upload Windows release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: false
