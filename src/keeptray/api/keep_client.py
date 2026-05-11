@@ -423,6 +423,51 @@ class KeepClient:
         model = _to_model(note)
         self._notes_memory = [model if n.id == note_id else n for n in self._notes_memory]
 
+    def get_archived_notes(self) -> list[NoteModel]:
+        raw = [n for n in self._keep.all() if n.archived and not n.trashed]
+        raw.sort(key=lambda n: (
+            -(n.timestamps.updated.timestamp() if n.timestamps and n.timestamps.updated else 0),
+        ))
+        return [_to_model(n) for n in raw]
+
+    def get_trashed_notes(self) -> list[NoteModel]:
+        raw = [n for n in self._keep.all() if n.trashed]
+        raw.sort(key=lambda n: (
+            -(n.timestamps.updated.timestamp() if n.timestamps and n.timestamps.updated else 0),
+        ))
+        return [_to_model(n) for n in raw]
+
+    def archive_note(self, note_id: str) -> None:
+        note = self._keep.get(note_id)
+        if note:
+            note.archived = True
+            self._keep.sync()
+            self._notes_memory = [n for n in self._notes_memory if n.id != note_id]
+
+    def unarchive_note(self, note_id: str) -> None:
+        note = self._keep.get(note_id)
+        if note:
+            note.archived = False
+            self._keep.sync()
+
+    def restore_note(self, note_id: str) -> None:
+        note = self._keep.get(note_id)
+        if note:
+            note.untrash()
+            self._keep.sync()
+
+    def permanently_delete_note(self, note_id: str) -> None:
+        note = self._keep.get(note_id)
+        if note:
+            note.delete()
+            self._keep.sync()
+
+    def empty_trash(self) -> None:
+        for note in list(self._keep.all()):
+            if note.trashed:
+                note.delete()
+        self._keep.sync()
+
     def delete_note(self, note_id: str) -> None:
         note = self._keep.get(note_id)
         if note:

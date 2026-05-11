@@ -48,6 +48,8 @@ _MENU_CSS = """
 class SidebarWidget(QWidget):
     new_note_requested = pyqtSignal()
     sync_requested = pyqtSignal()
+    archive_requested = pyqtSignal()
+    trash_requested = pyqtSignal()
     open_web_requested = pyqtSignal()
     about_requested = pyqtSignal()
     logout_requested = pyqtSignal()
@@ -69,8 +71,10 @@ class SidebarWidget(QWidget):
 
         self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
         self._sync_btn      = self._make_btn("🔄", _("Sync"),     self.sync_requested)
+        self._archive_btn   = self._make_btn("📦", _("Archive"),   self.archive_requested)
+        self._trash_btn     = self._make_btn("🗑", _("Trash"),     self.trash_requested)
 
-        for btn in (self._new_note_btn, self._sync_btn):
+        for btn in (self._new_note_btn, self._sync_btn, self._archive_btn, self._trash_btn):
             layout.addWidget(btn)
 
         layout.addStretch()
@@ -83,6 +87,8 @@ class SidebarWidget(QWidget):
         """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""
         self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
         self._sync_btn.setText(f"🔄\n{self._wrap_label(_('Sync'))}")
+        self._archive_btn.setText(f"📦\n{self._wrap_label(_('Archive'))}")
+        self._trash_btn.setText(f"🗑\n{self._wrap_label(_('Trash'))}")
         self._settings_btn.setText(f"⚙️\n{self._wrap_label(_('Settings'))}")
 
     # ── 설정 메뉴 ─────────────────────────────────────────────

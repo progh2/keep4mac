@@ -21,10 +21,13 @@ from keeptray.ui.login_widget import LoginWidget
 from keeptray.ui.note_editor_widget import NoteEditorWidget
 from keeptray.ui.note_list_widget import NoteListWidget
 from keeptray.ui.sidebar_widget import SidebarWidget
+from keeptray.ui.special_notes_widget import SpecialNotesWidget
 
-_IDX_LOGIN = 0
-_IDX_NOTES = 1
-_IDX_EDITOR = 2
+_IDX_LOGIN   = 0
+_IDX_NOTES   = 1
+_IDX_EDITOR  = 2
+_IDX_ARCHIVE = 3
+_IDX_TRASH   = 4
 
 
 class _DragBar(QWidget):
@@ -128,6 +131,8 @@ class MainPanel(QWidget):
         self._sidebar.quit_requested.connect(self._on_quit)
         self._sidebar.lang_changed.connect(self._on_lang_changed)
         self._sidebar.font_settings_requested.connect(self._on_font_settings)
+        self._sidebar.archive_requested.connect(self._on_archive)
+        self._sidebar.trash_requested.connect(self._on_trash)
         self._sidebar.hide()
         row.addWidget(self._sidebar)
 
@@ -145,9 +150,19 @@ class MainPanel(QWidget):
         self._editor_w = NoteEditorWidget(self._client)
         self._editor_w.back_requested.connect(self._on_editor_back)
 
-        self._stack.addWidget(self._login_w)   # index 0
-        self._stack.addWidget(self._notes_w)   # index 1
-        self._stack.addWidget(self._editor_w)  # index 2
+        self._archive_w = SpecialNotesWidget(self._client, "archive")
+        self._archive_w.back_requested.connect(self._show_notes)
+        self._archive_w.notes_changed.connect(lambda: self._notes_w.load_notes(force_sync=False))
+
+        self._trash_w = SpecialNotesWidget(self._client, "trash")
+        self._trash_w.back_requested.connect(self._show_notes)
+        self._trash_w.notes_changed.connect(lambda: self._notes_w.load_notes(force_sync=False))
+
+        self._stack.addWidget(self._login_w)    # index 0
+        self._stack.addWidget(self._notes_w)    # index 1
+        self._stack.addWidget(self._editor_w)   # index 2
+        self._stack.addWidget(self._archive_w)  # index 3
+        self._stack.addWidget(self._trash_w)    # index 4
 
         row.addWidget(self._stack, 1)
         root.addLayout(row, 1)
@@ -257,6 +272,14 @@ class MainPanel(QWidget):
         self._client.logout()
         self._sidebar.hide()
         self._stack.setCurrentIndex(_IDX_LOGIN)
+
+    def _on_archive(self):
+        self._stack.setCurrentIndex(_IDX_ARCHIVE)
+        self._archive_w.load()
+
+    def _on_trash(self):
+        self._stack.setCurrentIndex(_IDX_TRASH)
+        self._trash_w.load()
 
     def _on_font_settings(self):
         from keeptray.core import settings as app_settings
