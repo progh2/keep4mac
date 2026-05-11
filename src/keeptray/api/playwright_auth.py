@@ -1,5 +1,6 @@
 import logging
 import re
+import shutil
 import time
 from pathlib import Path
 from typing import Optional
@@ -38,6 +39,7 @@ def run_browser_login() -> tuple[str, str, dict, str]:
         )
 
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    _clear_singleton_locks(PROFILE_DIR)
 
     page_loaded = False
     captured_key: Optional[str] = None
@@ -117,6 +119,19 @@ def run_browser_login() -> tuple[str, str, dict, str]:
 
     logger.info("인증 정보 추출 완료 (email=%s, api_key=%s…)", email or "unknown", (captured_key or "")[:8])
     return email, sapisid, cookies_dict, captured_key or ""
+
+
+def _clear_singleton_locks(profile_dir: Path) -> None:
+    """비정상 종료 후 남은 Chromium 잠금 파일을 삭제한다."""
+    for name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
+        p = profile_dir / name
+        try:
+            if p.is_dir():
+                shutil.rmtree(p, ignore_errors=True)
+            elif p.exists() or p.is_symlink():
+                p.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 def _safe_wait(page, ms: int) -> None:

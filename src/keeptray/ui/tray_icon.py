@@ -108,6 +108,7 @@ class TrayApp(rumps.App):
             )
             btn.addTrackingArea_(tracking_area)
             logger.info("트레이 클릭 + 호버 색상 설정 완료 (색상 수: %d)", len(_colored_images))
+            self._panel.show_near_menubar()
         except Exception as e:
             logger.warning("설정 실패: %s", e, exc_info=True)
 

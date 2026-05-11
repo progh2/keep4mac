@@ -68,6 +68,7 @@ class WindowsTray:
         )
         self._icon.run_detached()
         self._drain_timer.start(50)
+        QTimer.singleShot(500, self._panel.show_near_menubar)
         logger.info("Windows 트레이 시작 완료")
 
     # ── 콜백 (백그라운드 스레드에서 호출) ────────────────────────
