@@ -86,12 +86,12 @@ app = BUNDLE(
     coll,
     name="keep4mac.app",
     bundle_identifier="com.keep4mac.app",
-    version="0.1.51",
+    version="0.1.52",
     info_plist={
         "LSUIElement": True,          # 메뉴바 앱 — Dock 숨김
         "CFBundleName": "keep4mac",
         "CFBundleDisplayName": "keep4mac",
-        "CFBundleShortVersionString": "0.1.51",
+        "CFBundleShortVersionString": "0.1.52",
         "NSHighResolutionCapable": True,
         "NSAppleEventsUsageDescription": "Google Keep 로그인에 사용됩니다.",
     },

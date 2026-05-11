@@ -148,14 +148,50 @@ class SidebarWidget(QWidget):
         autostart.toggle()
 
     def _on_set_my_email(self):
-        from PyQt6.QtWidgets import QInputDialog
-        from keep4mac.core import settings as _settings
-        current = _settings.get_my_email()
-        text, ok = QInputDialog.getText(
-            self, _("My Email"), _("Enter your email address:"), text=current
+        from PyQt6.QtWidgets import (
+            QDialog, QDialogButtonBox, QLabel, QLineEdit, QVBoxLayout,
         )
-        if ok:
-            _settings.set_my_email(text.strip())
+        from keep4mac.core import settings as _settings
+
+        current = _settings.get_my_email()
+
+        dlg = QDialog()
+        dlg.setWindowTitle(_("My Email"))
+        dlg.setFixedWidth(320)
+        dlg.setStyleSheet("QDialog { background: #ffffff; color: #1c1c1e; }")
+
+        layout = QVBoxLayout(dlg)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(10)
+
+        lbl = QLabel(_("Enter your email address:"))
+        lbl.setStyleSheet("color: #1c1c1e; font-size: 12px;")
+        layout.addWidget(lbl)
+
+        edit = QLineEdit(current or "")
+        edit.setStyleSheet("""
+            QLineEdit {
+                background: #f2f2f7;
+                border: 1px solid #d1d1d6;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 13px;
+                color: #1c1c1e;
+            }
+            QLineEdit:focus { border-color: #007AFF; background: #fff; }
+        """)
+        layout.addWidget(edit)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.setStyleSheet("color: #1c1c1e;")
+        buttons.accepted.connect(dlg.accept)
+        buttons.rejected.connect(dlg.reject)
+        layout.addWidget(buttons)
+
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            _settings.set_my_email(edit.text().strip())
 
     def _on_lang_select(self, code: str):
         i18n.save_lang(code)
