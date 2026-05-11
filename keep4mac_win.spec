@@ -1,14 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Windows PyInstaller 스펙 — macOS BUNDLE 없음
 from pathlib import Path
-from PyInstaller.utils.hooks import copy_metadata
+from PyInstaller.utils.hooks import copy_metadata, collect_data_files
 
 SRC = str(Path("src").resolve())
 
 _metadata = []
-for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "pystray", "PIL"]:
+for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "pystray", "PIL",
+             "python-docx", "python-hwpx"]:
     try:
         _metadata += copy_metadata(_pkg)
+    except Exception:
+        pass
+
+# python-docx / python-hwpx 템플릿·스켈레톤 파일 포함
+_extra_data = []
+for _pkg in ["docx", "hwpx"]:
+    try:
+        _extra_data += collect_data_files(_pkg)
     except Exception:
         pass
 
@@ -19,7 +28,7 @@ a = Analysis(
     datas=[
         (SRC + "/keep4mac", "keep4mac"),
         ("i18n", "i18n"),
-    ] + _metadata,
+    ] + _metadata + _extra_data,
     hiddenimports=[
         "PyQt6.QtCore",
         "PyQt6.QtGui",
@@ -40,6 +49,16 @@ a = Analysis(
         "PIL.Image",
         "PIL.ImageDraw",
         "winreg",
+        "docx",
+        "docx.oxml",
+        "docx.oxml.ns",
+        "docx.shared",
+        "docx.enum.text",
+        "hwpx",
+        "lxml",
+        "lxml.etree",
+        "lxml._elementpath",
+        "zipfile",
     ],
     hookspath=[],
     hooksconfig={},

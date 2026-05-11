@@ -1055,8 +1055,11 @@ class NoteEditorWidget(QWidget):
         if self._list_scroll.isVisible():
             checklist = [(cb.isChecked(), text) for cb, text in self._checklist_rows]
         img_data = self._fetch_note_image()
-        _write_hwpx(path, title, body, checklist, img_data)
-        self._show_export_toast(f"✓  {Path(path).name}")
+        try:
+            _write_hwpx(path, title, body, checklist, img_data)
+            self._show_export_toast(f"✓  {Path(path).name}")
+        except Exception as e:
+            self._show_export_toast(f"✗  {e}", duration=4000)
 
     def _on_save_docx(self):
         title, body = self._note_content()
@@ -1071,8 +1074,11 @@ class NoteEditorWidget(QWidget):
         if self._list_scroll.isVisible():
             checklist = [(cb.isChecked(), text) for cb, text in self._checklist_rows]
         img_data = self._fetch_note_image()
-        _write_docx(path, title, body, checklist, img_data)
-        self._show_export_toast(f"✓  {Path(path).name}")
+        try:
+            _write_docx(path, title, body, checklist, img_data)
+            self._show_export_toast(f"✓  {Path(path).name}")
+        except Exception as e:
+            self._show_export_toast(f"✗  {e}", duration=4000)
 
     # ── #27 이메일 공유 ──────────────────────────────────────
 
