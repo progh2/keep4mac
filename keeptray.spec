@@ -139,12 +139,12 @@ app = BUNDLE(
     coll,
     name="keeptray.app",
     bundle_identifier="com.keeptray.app",
-    version="0.1.59",
+    version="0.1.60",
     info_plist={
         "LSUIElement": True,          # 메뉴바 앱 — Dock 숨김
         "CFBundleName": "keeptray",
         "CFBundleDisplayName": "keeptray",
-        "CFBundleShortVersionString": "0.1.59",
+        "CFBundleShortVersionString": "0.1.60",
         "NSHighResolutionCapable": True,
         "NSAppleEventsUsageDescription": "Google Keep 로그인에 사용됩니다.",
     },
