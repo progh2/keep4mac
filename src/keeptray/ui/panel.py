@@ -127,6 +127,7 @@ class MainPanel(QWidget):
         self._sidebar.logout_requested.connect(self._on_logout)
         self._sidebar.quit_requested.connect(self._on_quit)
         self._sidebar.lang_changed.connect(self._on_lang_changed)
+        self._sidebar.font_settings_requested.connect(self._on_font_settings)
         self._sidebar.hide()
         row.addWidget(self._sidebar)
 
@@ -256,6 +257,15 @@ class MainPanel(QWidget):
         self._client.logout()
         self._sidebar.hide()
         self._stack.setCurrentIndex(_IDX_LOGIN)
+
+    def _on_font_settings(self):
+        from keeptray.core import settings as app_settings
+        from keeptray.ui.font_settings_dialog import FontSettingsDialog
+        dlg = FontSettingsDialog(self)
+        if dlg.exec() == FontSettingsDialog.DialogCode.Accepted:
+            app_settings.set_fonts(dlg.get_fonts())
+            self._notes_w.retranslate_ui()      # 목록 재렌더 → 새 폰트 적용
+            self._editor_w.apply_fonts()         # 편집기 폰트 즉시 반영
 
     def _on_lang_changed(self, lang: str):
         i18n.setup()

@@ -56,3 +56,33 @@ def set_sort(key: str, desc: bool) -> None:
     data = _load()
     data["sort"] = {"key": key, "desc": desc}
     _save(data)
+
+
+_FONT_DEFAULTS: dict[str, dict] = {
+    "list_title":   {"family": "", "size": 13},
+    "list_content": {"family": "", "size": 12},
+    "editor_title": {"family": "", "size": 16},
+    "editor_body":  {"family": "", "size": 13},
+}
+
+
+def get_fonts() -> dict:
+    saved = _load().get("fonts", {})
+    result = {}
+    for key, default in _FONT_DEFAULTS.items():
+        entry = saved.get(key, {})
+        result[key] = {
+            "family": entry.get("family", default["family"]),
+            "size": int(entry.get("size", default["size"])),
+        }
+    return result
+
+
+def set_fonts(fonts: dict) -> None:
+    data = _load()
+    data["fonts"] = fonts
+    _save(data)
+
+
+def get_font_defaults() -> dict:
+    return {k: dict(v) for k, v in _FONT_DEFAULTS.items()}

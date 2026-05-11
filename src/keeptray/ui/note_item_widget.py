@@ -4,9 +4,15 @@ from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
+from keeptray.core import settings as app_settings
 from keeptray.core.models import NoteModel, NoteType
 from keeptray.core.url_utils import extract_urls, short_url
 from keeptray.i18n import gettext as _
+
+
+def _font_css(family: str, size: int, extra: str = "") -> str:
+    family_part = f'font-family: "{family}";' if family else ""
+    return f"font-size: {size}px; {family_part} {extra}"
 
 _COPY_BTN_HIDDEN = """
     QPushButton { background: transparent; border: none;
@@ -63,6 +69,7 @@ class NoteItemWidget(QFrame):
         return "\n".join(parts)
 
     def _build_ui(self, note: NoteModel):
+        fonts = app_settings.get_fonts()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -94,7 +101,11 @@ class NoteItemWidget(QFrame):
 
         if note.title or note.pinned:
             title_label = QLabel(note.title)
-            title_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #1c1c1e; background: transparent;")
+            title_css = _font_css(
+                fonts["list_title"]["family"], fonts["list_title"]["size"],
+                "font-weight: 600; color: #1c1c1e; background: transparent;"
+            )
+            title_label.setStyleSheet(title_css)
             title_label.setWordWrap(True)
             title_row.addWidget(title_label, 1)
         else:
@@ -114,7 +125,11 @@ class NoteItemWidget(QFrame):
         content = note.content
         if content:
             content_label = QLabel(content)
-            content_label.setStyleSheet("font-size: 12px; color: #636366; background: transparent;")
+            content_css = _font_css(
+                fonts["list_content"]["family"], fonts["list_content"]["size"],
+                "color: #636366; background: transparent;"
+            )
+            content_label.setStyleSheet(content_css)
             content_label.setWordWrap(True)
             tl.addWidget(content_label)
 

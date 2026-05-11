@@ -53,6 +53,7 @@ class SidebarWidget(QWidget):
     logout_requested = pyqtSignal()
     quit_requested = pyqtSignal()
     lang_changed = pyqtSignal(str)  # lang code
+    font_settings_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -115,6 +116,10 @@ class SidebarWidget(QWidget):
                 act.triggered.connect(
                     lambda checked=False, c=code: self._on_lang_select(c)
                 )
+
+        # 폰트 설정
+        font_act = menu.addAction(f"🔤  {_('Font Settings…')}")
+        font_act.triggered.connect(lambda: self.font_settings_requested.emit())
 
         menu.addSeparator()
 

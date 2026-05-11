@@ -325,6 +325,7 @@ class NoteEditorWidget(QWidget):
         self._orig_body: str = ""
         self._revert_btn: QPushButton | None = None
         self._build_ui()
+        self.apply_fonts()
         self._title_edit.textChanged.connect(self._update_revert_btn)
         self._body_edit.textChanged.connect(self._update_revert_btn)
 
@@ -558,6 +559,27 @@ class NoteEditorWidget(QWidget):
         root.addWidget(footer)
 
     # ── 공개 API ──────────────────────────────────────────────
+
+    def apply_fonts(self):
+        """설정에서 폰트를 읽어 제목·본문 위젯에 즉시 적용한다."""
+        from keeptray.core import settings as app_settings
+        fonts = app_settings.get_fonts()
+
+        ft = fonts["editor_title"]
+        family_css = f'font-family: "{ft["family"]}";' if ft["family"] else ""
+        self._title_edit.setStyleSheet(f"""
+            QLineEdit {{
+                font-size: {ft["size"]}px; {family_css} font-weight: 600; color: #1c1c1e;
+                border: none; border-bottom: 1px solid #d1d1d6;
+                padding: 4px 0; background: transparent;
+            }}
+        """)
+
+        fb = fonts["editor_body"]
+        family_css = f'font-family: "{fb["family"]}";' if fb["family"] else ""
+        self._body_edit.setStyleSheet(f"""
+            QTextEdit {{ font-size: {fb["size"]}px; {family_css} color: #1c1c1e; border: none; background: transparent; }}
+        """)
 
     def retranslate_ui(self):
         self._title_edit.setPlaceholderText(_("Title"))
