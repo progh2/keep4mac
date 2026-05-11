@@ -104,6 +104,7 @@ def _to_model(note) -> NoteModel:
 
     ts = getattr(note, "timestamps", None)
     updated = (ts.updated if ts and ts.updated else None)
+    created = (ts.created if ts and ts.created else None)
 
     if isinstance(note, gkeepapi.node.List):
         items = [
@@ -121,6 +122,7 @@ def _to_model(note) -> NoteModel:
             checklist_items=items,
             image_url=image_url,
             updated=updated,
+            created=created,
         )
 
     return NoteModel(
@@ -132,6 +134,7 @@ def _to_model(note) -> NoteModel:
         color=color,
         image_url=image_url,
         updated=updated,
+        created=created,
     )
 
 
@@ -149,12 +152,15 @@ def _note_to_dict(n: "NoteModel") -> dict:
         "checklist_items": [{"text": i.text, "checked": i.checked} for i in n.checklist_items],
         "image_url": n.image_url,
         "updated": n.updated.isoformat() if n.updated else None,
+        "created": n.created.isoformat() if n.created else None,
     }
 
 
 def _note_from_dict(d: dict) -> "NoteModel":
     updated_str = d.get("updated")
     updated = datetime.fromisoformat(updated_str) if updated_str else None
+    created_str = d.get("created")
+    created = datetime.fromisoformat(created_str) if created_str else None
     return NoteModel(
         id=d["id"],
         title=d.get("title", ""),
@@ -165,6 +171,7 @@ def _note_from_dict(d: dict) -> "NoteModel":
         checklist_items=[ChecklistItem(**i) for i in d.get("checklist_items", [])],
         image_url=d.get("image_url"),
         updated=updated,
+        created=created,
     )
 
 

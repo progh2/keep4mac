@@ -41,3 +41,18 @@ def set_window_pos(x: int, y: int) -> None:
     data = _load()
     data["window_pos"] = [x, y]
     _save(data)
+
+
+def get_sort() -> dict:
+    """정렬 설정 반환. key: 'updated'|'created'|'title', desc: bool"""
+    s = _load().get("sort", {})
+    return {
+        "key": s.get("key", "updated"),
+        "desc": s.get("desc", True),
+    }
+
+
+def set_sort(key: str, desc: bool) -> None:
+    data = _load()
+    data["sort"] = {"key": key, "desc": desc}
+    _save(data)

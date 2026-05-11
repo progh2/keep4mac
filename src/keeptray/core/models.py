@@ -56,6 +56,7 @@ class NoteModel:
     checklist_items: list[ChecklistItem] = field(default_factory=list)
     image_url: str | None = None
     updated: datetime | None = None
+    created: datetime | None = None
 
     @property
     def color_hex(self) -> str:
