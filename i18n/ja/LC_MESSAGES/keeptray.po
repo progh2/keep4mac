@@ -1,4 +1,4 @@
-# Japanese translation for keep4mac
+# Japanese translation for keeptray
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -89,8 +89,8 @@ msgstr "保存"
 msgid "Loading image…"
 msgstr "画像を読み込んでいます…"
 
-msgid "About keep4mac"
-msgstr "keep4macについて"
+msgid "About keeptray"
+msgstr "keeptrayについて"
 
 msgid "Version"
 msgstr "バージョン"

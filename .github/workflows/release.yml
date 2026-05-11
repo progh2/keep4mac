@@ -31,8 +31,8 @@ jobs:
       - name: Compile .po → .mo
         run: |
           for lang in ko en ja; do
-            msgfmt i18n/${lang}/LC_MESSAGES/keep4mac.po \
-                   -o i18n/${lang}/LC_MESSAGES/keep4mac.mo
+            msgfmt i18n/${lang}/LC_MESSAGES/keeptray.po \
+                   -o i18n/${lang}/LC_MESSAGES/keeptray.mo
           done
 
       - name: Build DMG
@@ -61,17 +61,17 @@ jobs:
           pip install "pyinstaller>=6.0" "pyqt6==6.7.1" "Babel"
 
       - name: Compile .po → .mo
-        run: pybabel compile -d i18n -D keep4mac
+        run: pybabel compile -d i18n -D keeptray
 
       - name: Build EXE
-        run: python -m PyInstaller keep4mac_win.spec --noconfirm
+        run: python -m PyInstaller keeptray_win.spec --noconfirm
 
       - name: Package ZIP
         shell: pwsh
         run: |
-          $ver = python -c "from keep4mac import __version__; print(__version__)"
-          Compress-Archive -Path dist/keep4mac `
-                           -DestinationPath "dist/keep4mac-$ver-win.zip" -Force
+          $ver = python -c "from keeptray import __version__; print(__version__)"
+          Compress-Archive -Path dist/keeptray `
+                           -DestinationPath "dist/keeptray-$ver-win.zip" -Force
 
       - name: Upload Windows release
         uses: softprops/action-gh-release@v2

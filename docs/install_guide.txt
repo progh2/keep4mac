@@ -1,4 +1,4 @@
-keep4mac.app을 Applications 폴더로 드래그한 후
+keeptray.app을 Applications 폴더로 드래그한 후
 터미널에서 아래 명령어를 실행하세요.
 
-xattr -rd com.apple.quarantine /Applications/keep4mac.app && open /Applications/keep4mac.app
+xattr -rd com.apple.quarantine /Applications/keeptray.app && open /Applications/keeptray.app

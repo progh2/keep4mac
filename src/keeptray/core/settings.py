@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-_SETTINGS_PATH = Path.home() / ".config" / "keep4mac" / "settings.json"
+_SETTINGS_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
 
 
 def _load() -> dict:

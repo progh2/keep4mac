@@ -6,10 +6,10 @@ from PyQt6.QtWidgets import (
     QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
 )
 
-from keep4mac.api.keep_client import KeepClient, SyncError
-from keep4mac.core.models import NoteModel
-from keep4mac.i18n import gettext as _
-from keep4mac.ui.note_item_widget import NoteItemWidget
+from keeptray.api.keep_client import KeepClient, SyncError
+from keeptray.core.models import NoteModel
+from keeptray.i18n import gettext as _
+from keeptray.ui.note_item_widget import NoteItemWidget
 
 logger = logging.getLogger(__name__)
 

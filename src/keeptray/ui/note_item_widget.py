@@ -4,9 +4,9 @@ from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
-from keep4mac.core.models import NoteModel, NoteType
-from keep4mac.core.url_utils import extract_urls, short_url
-from keep4mac.i18n import gettext as _
+from keeptray.core.models import NoteModel, NoteType
+from keeptray.core.url_utils import extract_urls, short_url
+from keeptray.i18n import gettext as _
 
 _COPY_BTN_HIDDEN = """
     QPushButton { background: transparent; border: none;

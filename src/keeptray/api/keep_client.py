@@ -11,16 +11,16 @@ import gkeepapi
 import keyring
 import requests as req_lib
 
-from keep4mac.core.models import ChecklistItem, NoteColor, NoteModel, NoteType
+from keeptray.core.models import ChecklistItem, NoteColor, NoteModel, NoteType
 
 logger = logging.getLogger(__name__)
 
-_SERVICE = "keep4mac"
+_SERVICE = "keeptray"
 _KEY_SAPISID = "sapisid"
 _KEY_EMAIL = "email"
-_SESSION_PATH = Path.home() / ".config" / "keep4mac" / "session.json"
-_IMAGE_CACHE_DIR = Path.home() / ".config" / "keep4mac" / "image_cache"
-_NOTES_CACHE_PATH = Path.home() / ".config" / "keep4mac" / "notes_cache.json"
+_SESSION_PATH = Path.home() / ".config" / "keeptray" / "session.json"
+_IMAGE_CACHE_DIR = Path.home() / ".config" / "keeptray" / "image_cache"
+_NOTES_CACHE_PATH = Path.home() / ".config" / "keeptray" / "notes_cache.json"
 _SYNC_INTERVAL = 300  # 초: 5분 이내 재동기화 생략
 
 # keep.google.com이 실제로 사용하는 API 엔드포인트 (SAPISIDHASH 인증 사용)

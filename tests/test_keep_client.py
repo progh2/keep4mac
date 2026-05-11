@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import gkeepapi
 import pytest
 
-from keep4mac.api.keep_client import AuthError, KeepClient, SyncError
-from keep4mac.core.models import NoteColor, NoteType
+from keeptray.api.keep_client import AuthError, KeepClient, SyncError
+from keeptray.core.models import NoteColor, NoteType
 
 
 def _make_note(title="제목", text="내용", pinned=False, color_value="DEFAULT", trashed=False, archived=False):
@@ -30,14 +30,14 @@ class TestLoginWithBrowser:
         with (
             patch.object(client._keep, "load"),
             patch.object(client._keep, "sync"),
-            patch("keep4mac.api.keep_client.keyring.set_password") as mock_set,
-            patch("keep4mac.api.keep_client._save_session") as mock_save,
+            patch("keeptray.api.keep_client.keyring.set_password") as mock_set,
+            patch("keeptray.api.keep_client._save_session") as mock_save,
         ):
             client.login_with_browser("user@gmail.com", "sapisid-abc", {"SID": "x"}, "key123")
 
         assert client.is_logged_in
         assert client.email == "user@gmail.com"
-        mock_set.assert_any_call("keep4mac", "sapisid", "sapisid-abc")
+        mock_set.assert_any_call("keeptray", "sapisid", "sapisid-abc")
         mock_save.assert_called_once_with({"SID": "x"}, "key123")
 
     def test_login_failure_raises_auth_error(self, client):
@@ -54,9 +54,9 @@ class TestLoginWithBrowser:
 class TestResume:
     def test_resume_success(self, client):
         with (
-            patch("keep4mac.api.keep_client.keyring.get_password",
+            patch("keeptray.api.keep_client.keyring.get_password",
                   side_effect=["user@gmail.com", "sapisid-abc"]),
-            patch("keep4mac.api.keep_client._load_session",
+            patch("keeptray.api.keep_client._load_session",
                   return_value=({"SID": "x"}, "key123")),
             patch.object(client._keep, "load"),
         ):
@@ -67,8 +67,8 @@ class TestResume:
 
     def test_resume_no_sapisid_returns_false(self, client):
         with (
-            patch("keep4mac.api.keep_client.keyring.get_password", return_value=None),
-            patch("keep4mac.api.keep_client._load_session", return_value=({}, "")),
+            patch("keeptray.api.keep_client.keyring.get_password", return_value=None),
+            patch("keeptray.api.keep_client._load_session", return_value=({}, "")),
         ):
             result = client.resume()
 

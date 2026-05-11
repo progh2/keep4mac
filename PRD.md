@@ -1,4 +1,4 @@
-# PRD: keep4mac
+# PRD: keeptray
 
 > **문서 버전**: v0.1.42 기준 현행화 (2026-05-10)
 
@@ -26,7 +26,7 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 ### 1. Google 계정 인증
 - **Playwright Chromium** 브라우저를 자동 실행해 Google 계정 로그인
-- 인증 쿠키(SAPISID)를 macOS Keychain과 `~/.config/keep4mac/session.json`에 저장
+- 인증 쿠키(SAPISID)를 macOS Keychain과 `~/.config/keeptray/session.json`에 저장
 - 재실행 시 저장된 세션 자동 복원 (재로그인 불필요)
 - Google 앱 비밀번호·별도 API 키 불필요
 
@@ -74,13 +74,13 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 ### 8. 내보내기 · 공유
 - **파일 저장**: Markdown (.md) / Text (.txt) / Image (.png) / PDF (.pdf) / 한글 (.hwpx, 이미지 포함) / Word (.docx, 이미지 포함)
-- **이메일 공유**: 기본 메일 앱으로 `mailto:` 실행 (제목 형식: `keep4mac - {노트 제목}`)
+- **이메일 공유**: 기본 메일 앱으로 `mailto:` 실행 (제목 형식: `keeptray - {노트 제목}`)
 - **내 메일로 보내기**: 설정에 저장된 내 메일 주소로 원클릭 전송
 - **카카오톡 공유**: 내용 클립보드 복사 후 카카오톡 실행
 - **번역 새 노트**: MyMemory 무료 API로 번역 후 새 노트 생성 (한·영·일 상호 번역)
 
 ### 9. 설정 저장
-- `~/.config/keep4mac/settings.json`에 내 메일 주소·선택 언어·패널 위치 저장
+- `~/.config/keeptray/settings.json`에 내 메일 주소·선택 언어·패널 위치 저장
 - 앱 재시작 후에도 유지
 
 ### 10. 자동 시작

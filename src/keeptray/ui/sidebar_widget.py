@@ -3,9 +3,9 @@ import unicodedata
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QMenu, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
-from keep4mac.core import autostart
-import keep4mac.i18n as i18n
-from keep4mac.i18n import gettext as _
+from keeptray.core import autostart
+import keeptray.i18n as i18n
+from keeptray.i18n import gettext as _
 
 _BTN_CSS = """
     QPushButton {{
@@ -119,7 +119,7 @@ class SidebarWidget(QWidget):
         menu.addSeparator()
 
         # 내 메일 주소
-        from keep4mac.core import settings as _settings
+        from keeptray.core import settings as _settings
         my_email = _settings.get_my_email()
         email_label = f"✉  {_('My Email')}  ({my_email})" if my_email else f"✉  {_('My Email')}"
         my_email_act = menu.addAction(email_label)
@@ -151,7 +151,7 @@ class SidebarWidget(QWidget):
         from PyQt6.QtWidgets import (
             QDialog, QDialogButtonBox, QLabel, QLineEdit, QVBoxLayout,
         )
-        from keep4mac.core import settings as _settings
+        from keeptray.core import settings as _settings
 
         current = _settings.get_my_email()
 

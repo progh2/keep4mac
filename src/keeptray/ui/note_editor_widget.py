@@ -15,11 +15,11 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-import keep4mac.i18n as i18n
-from keep4mac.api.keep_client import KeepClient
-from keep4mac.core.models import COLOR_HEX, NoteColor, NoteModel, NoteType
-from keep4mac.core.url_utils import extract_urls, short_url
-from keep4mac.i18n import gettext as _
+import keeptray.i18n as i18n
+from keeptray.api.keep_client import KeepClient
+from keeptray.core.models import COLOR_HEX, NoteColor, NoteModel, NoteType
+from keeptray.core.url_utils import extract_urls, short_url
+from keeptray.i18n import gettext as _
 
 
 class _IMELineEdit(QLineEdit):
@@ -1083,20 +1083,20 @@ class NoteEditorWidget(QWidget):
     # ── #27 이메일 공유 ──────────────────────────────────────
 
     def _on_email_share(self):
-        from keep4mac.core import settings as _settings
+        from keeptray.core import settings as _settings
         title, body = self._note_content()
-        subject = f"keep4mac - {title}" if title else "keep4mac"
+        subject = f"keeptray - {title}" if title else "keeptray"
         url = QUrl(f"mailto:?subject={quote(subject)}&body={quote(body)}")
         QDesktopServices.openUrl(url)
 
     def _on_my_email_share(self):
-        from keep4mac.core import settings as _settings
+        from keeptray.core import settings as _settings
         to = _settings.get_my_email()
         if not to:
             self._show_export_toast(f"⚠  {_('Set your email in Settings first')}", duration=3000)
             return
         title, body = self._note_content()
-        subject = f"keep4mac - {title}" if title else "keep4mac"
+        subject = f"keeptray - {title}" if title else "keeptray"
         url = QUrl(f"mailto:{quote(to)}?subject={quote(subject)}&body={quote(body)}")
         QDesktopServices.openUrl(url)
 

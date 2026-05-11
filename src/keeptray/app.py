@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QApplication
 logger = logging.getLogger(__name__)
 
 
-class Keep4MacApp:
+class KeepTrayApp:
     def __init__(self, qt_app: QApplication):
         self.qt_app = qt_app
 
@@ -17,13 +17,13 @@ class Keep4MacApp:
             self._start_windows()
 
     def _start_macos(self):
-        from keep4mac.ui.tray_icon import TrayApp
+        from keeptray.ui.tray_icon import TrayApp
         TrayApp(self.qt_app).run()   # rumps NSRunLoop 블로킹
 
     def _start_windows(self):
-        from keep4mac.api.keep_client import KeepClient
-        from keep4mac.ui.panel import MainPanel
-        from keep4mac.ui.tray_win import WindowsTray
+        from keeptray.api.keep_client import KeepClient
+        from keeptray.ui.panel import MainPanel
+        from keeptray.ui.tray_win import WindowsTray
 
         client = KeepClient()
         if client.resume():

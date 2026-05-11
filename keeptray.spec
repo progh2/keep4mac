@@ -31,7 +31,7 @@ a = Analysis(
     pathex=[SRC],
     binaries=[],
     datas=[
-        (SRC + "/keep4mac", "keep4mac"),
+        (SRC + "/keeptray", "keeptray"),
         ("i18n", "i18n"),
     ] + _metadata + _extra_data,
     hiddenimports=[
@@ -114,7 +114,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="keep4mac",
+    name="keeptray",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -132,19 +132,19 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="keep4mac",
+    name="keeptray",
 )
 
 app = BUNDLE(
     coll,
-    name="keep4mac.app",
-    bundle_identifier="com.keep4mac.app",
-    version="0.1.54",
+    name="keeptray.app",
+    bundle_identifier="com.keeptray.app",
+    version="0.1.56",
     info_plist={
         "LSUIElement": True,          # 메뉴바 앱 — Dock 숨김
-        "CFBundleName": "keep4mac",
-        "CFBundleDisplayName": "keep4mac",
-        "CFBundleShortVersionString": "0.1.54",
+        "CFBundleName": "keeptray",
+        "CFBundleDisplayName": "keeptray",
+        "CFBundleShortVersionString": "0.1.56",
         "NSHighResolutionCapable": True,
         "NSAppleEventsUsageDescription": "Google Keep 로그인에 사용됩니다.",
     },

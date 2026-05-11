@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from keep4mac.api.keep_client import AuthError, KeepClient
-from keep4mac.i18n import gettext as _
+from keeptray.api.keep_client import AuthError, KeepClient
+from keeptray.i18n import gettext as _
 
 
 class _BrowserLoginThread(QThread):
@@ -17,7 +17,7 @@ class _BrowserLoginThread(QThread):
         self.result: tuple | None = None  # (email, sapisid, cookies)
 
     def run(self):
-        from keep4mac.api.playwright_auth import run_browser_login
+        from keeptray.api.playwright_auth import run_browser_login
         try:
             self.result = run_browser_login()
             self.success.emit()
@@ -48,7 +48,7 @@ class LoginWidget(QWidget):
         hl.setSpacing(2)
         hl.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        title = QLabel("🗒  keep4mac")
+        title = QLabel("🗒  keeptray")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(
             "font-size: 20px; font-weight: bold; color: white; background: transparent;"

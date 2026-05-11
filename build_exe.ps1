@@ -1,8 +1,8 @@
-# keep4mac Windows .exe 빌드 스크립트 (PowerShell)
+# keeptray Windows .exe 빌드 스크립트 (PowerShell)
 $ErrorActionPreference = "Stop"
 
-$AppName = "keep4mac"
-$Version = (python -c "from keep4mac import __version__; print(__version__)")
+$AppName = "keeptray"
+$Version = (python -c "from keeptray import __version__; print(__version__)")
 $ZipName = "$AppName-$Version-win.zip"
 
 Write-Host "▶ 버전: $Version"
@@ -11,12 +11,12 @@ Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
 
 Write-Host "▶ .mo 파일 컴파일..."
 foreach ($lang in @("ko", "en", "ja")) {
-    msgfmt "i18n/$lang/LC_MESSAGES/keep4mac.po" -o "i18n/$lang/LC_MESSAGES/keep4mac.mo"
+    msgfmt "i18n/$lang/LC_MESSAGES/keeptray.po" -o "i18n/$lang/LC_MESSAGES/keeptray.mo"
     Write-Host "  ✓ $lang"
 }
 
 Write-Host "▶ EXE 빌드 (PyInstaller)..."
-python -m PyInstaller keep4mac_win.spec --noconfirm
+python -m PyInstaller keeptray_win.spec --noconfirm
 
 $ExePath = "dist/$AppName/$AppName.exe"
 if (-not (Test-Path $ExePath)) {

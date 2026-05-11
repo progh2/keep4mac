@@ -6,8 +6,8 @@ from AppKit import NSColor, NSImage, NSImageSymbolConfiguration, NSObject, NSTra
 from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import QApplication
 
-from keep4mac.api.keep_client import KeepClient
-from keep4mac.ui.panel import MainPanel
+from keeptray.api.keep_client import KeepClient
+from keeptray.ui.panel import MainPanel
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class _ClickTarget(NSObject):
 
 class TrayApp(rumps.App):
     def __init__(self, qt_app: QApplication):
-        super().__init__(name="keep4mac", title="🗒", quit_button=None)
+        super().__init__(name="keeptray", title="🗒", quit_button=None)
         self._qt_app = qt_app
         self._click_setup_done = False
 

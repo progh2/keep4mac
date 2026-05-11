@@ -4,17 +4,17 @@ from PyQt6.QtWidgets import (
     QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget,
 )
 
-from keep4mac import __version__
-from keep4mac.i18n import gettext as _
+from keeptray import __version__
+from keeptray.i18n import gettext as _
 
-_GITHUB_REPO = "https://github.com/progh2/keep4mac"
+_GITHUB_REPO = "https://github.com/progh2/keeptray"
 _GITHUB_PROFILE = "https://github.com/progh2"
 
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(_("About keep4mac"))
+        self.setWindowTitle(_("About keeptray"))
         self.setFixedSize(300, 260)
         self.setWindowFlags(
             Qt.WindowType.Dialog | Qt.WindowType.WindowCloseButtonHint
@@ -39,7 +39,7 @@ class AboutDialog(QDialog):
         icon.setStyleSheet("font-size: 28px; background: transparent;")
         hl.addWidget(icon)
 
-        title = QLabel("keep4mac")
+        title = QLabel("keeptray")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(
             "font-size: 16px; font-weight: bold; color: white; background: transparent;"

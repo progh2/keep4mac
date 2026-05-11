@@ -7,7 +7,7 @@ OPTIONS = {
     "argv_emulation": False,      # macOS 10.15+ 에서 필수
     "semi_standalone": False,     # 완전 독립 번들
     "packages": [
-        "keep4mac",
+        "keeptray",
         "PyQt6",
         "rumps",
         "gkeepapi",
@@ -34,9 +34,9 @@ OPTIONS = {
     ],
     "plist": {
         "LSUIElement": True,                          # 메뉴바 앱 — Dock에 표시 안 함
-        "CFBundleName": "keep4mac",
-        "CFBundleDisplayName": "keep4mac",
-        "CFBundleIdentifier": "com.keep4mac.app",
+        "CFBundleName": "keeptray",
+        "CFBundleDisplayName": "keeptray",
+        "CFBundleIdentifier": "com.keeptray.app",
         "CFBundleVersion": "0.1.0",
         "CFBundleShortVersionString": "0.1.0",
         "NSHighResolutionCapable": True,

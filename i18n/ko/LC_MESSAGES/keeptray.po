@@ -1,4 +1,4 @@
-# Korean translation for keep4mac
+# Korean translation for keeptray
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -89,8 +89,8 @@ msgstr "저장"
 msgid "Loading image…"
 msgstr "이미지 불러오는 중…"
 
-msgid "About keep4mac"
-msgstr "keep4mac 정보"
+msgid "About keeptray"
+msgstr "keeptray 정보"
 
 msgid "Version"
 msgstr "버전"

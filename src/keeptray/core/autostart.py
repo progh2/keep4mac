@@ -5,7 +5,7 @@ if sys.platform == "darwin":
     import os
     from pathlib import Path
 
-    _LABEL = "com.keep4mac.app"
+    _LABEL = "com.keeptray.app"
     _PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{_LABEL}.plist"
 
     def _app_executable() -> str | None:
@@ -53,7 +53,7 @@ if sys.platform == "darwin":
 elif sys.platform == "win32":
     import winreg
 
-    _APP_NAME = "keep4mac"
+    _APP_NAME = "keeptray"
     _RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
     def is_enabled() -> bool:

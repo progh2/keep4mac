@@ -7,7 +7,7 @@ from pathlib import Path
 
 _translation: _gettext.NullTranslations | None = None
 
-_SETTINGS_PATH = Path.home() / ".config" / "keep4mac" / "settings.json"
+_SETTINGS_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
 
 SUPPORTED_LANGS: dict[str, str] = {
     "ko": "한국어",
@@ -55,7 +55,7 @@ def setup() -> None:
     lang = current_lang()
     try:
         _translation = _gettext.translation(
-            "keep4mac",
+            "keeptray",
             localedir=str(_localedir()),
             languages=[lang, "en"],
         )
@@ -69,4 +69,4 @@ def gettext(s: str) -> str:
     return _translation.gettext(s)
 
 
-# 각 모듈에서 `from keep4mac.i18n import gettext as _` 로 임포트
+# 각 모듈에서 `from keeptray.i18n import gettext as _` 로 임포트

@@ -13,14 +13,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from keep4mac.api.keep_client import KeepClient
-from keep4mac.core import settings
-import keep4mac.i18n as i18n
-from keep4mac.ui.about_dialog import AboutDialog
-from keep4mac.ui.login_widget import LoginWidget
-from keep4mac.ui.note_editor_widget import NoteEditorWidget
-from keep4mac.ui.note_list_widget import NoteListWidget
-from keep4mac.ui.sidebar_widget import SidebarWidget
+from keeptray.api.keep_client import KeepClient
+from keeptray.core import settings
+import keeptray.i18n as i18n
+from keeptray.ui.about_dialog import AboutDialog
+from keeptray.ui.login_widget import LoginWidget
+from keeptray.ui.note_editor_widget import NoteEditorWidget
+from keeptray.ui.note_list_widget import NoteListWidget
+from keeptray.ui.sidebar_widget import SidebarWidget
 
 _IDX_LOGIN = 0
 _IDX_NOTES = 1

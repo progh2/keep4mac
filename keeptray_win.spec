@@ -26,7 +26,7 @@ a = Analysis(
     pathex=[SRC],
     binaries=[],
     datas=[
-        (SRC + "/keep4mac", "keep4mac"),
+        (SRC + "/keeptray", "keeptray"),
         ("i18n", "i18n"),
     ] + _metadata + _extra_data,
     hiddenimports=[
@@ -109,7 +109,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="keep4mac",
+    name="keeptray",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -125,5 +125,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="keep4mac",
+    name="keeptray",
 )

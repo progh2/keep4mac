@@ -1,6 +1,6 @@
 # Contributors
 
-keep4mac에 기여해주신 분들께 감사드립니다 🙏
+keeptray에 기여해주신 분들께 감사드립니다 🙏
 
 ## 개발자
 

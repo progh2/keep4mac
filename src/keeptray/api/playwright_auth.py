@@ -6,7 +6,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-PROFILE_DIR = Path.home() / ".config" / "keep4mac" / "chrome_profile"
+PROFILE_DIR = Path.home() / ".config" / "keeptray" / "chrome_profile"
 
 _GOOGLE_COOKIE_NAMES = {
     "SID", "SSID", "APISID", "SAPISID", "HSID",

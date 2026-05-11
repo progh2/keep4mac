@@ -1,4 +1,4 @@
-# English translation for keep4mac
+# English translation for keeptray
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -89,7 +89,7 @@ msgstr ""
 msgid "Loading image…"
 msgstr ""
 
-msgid "About keep4mac"
+msgid "About keeptray"
 msgstr ""
 
 msgid "Version"

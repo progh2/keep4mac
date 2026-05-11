@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# keep4mac .app + .dmg 빌드 스크립트
+# keeptray .app + .dmg 빌드 스크립트
 set -e
 
-APP_NAME="keep4mac"
-VERSION="0.1.54"
+APP_NAME="keeptray"
+VERSION="0.1.56"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -12,7 +12,7 @@ echo "▶ 이전 빌드 정리..."
 rm -rf build dist
 
 echo "▶ .app 빌드 (PyInstaller)..."
-python3 -m PyInstaller keep4mac.spec --noconfirm 2>&1 | tail -5
+python3 -m PyInstaller keeptray.spec --noconfirm 2>&1 | tail -5
 
 APP_PATH="dist/${APP_NAME}.app"
 if [ ! -d "$APP_PATH" ]; then
@@ -65,7 +65,7 @@ echo "  앱 크기: ${APP_SIZE_MB}MB → DMG 용량: ${DMG_SIZE_MB}MB"
 # 임시 읽기-쓰기 이미지 생성
 hdiutil create -size "${DMG_SIZE_MB}m" -fs HFS+ -volname "$APP_NAME" "$TMP_DMG"
 
-# 고유한 임시 경로에 마운트 (기존 /Volumes/keep4mac 충돌 방지)
+# 고유한 임시 경로에 마운트 (기존 /Volumes/keeptray 충돌 방지)
 mkdir -p "$MOUNT_DIR"
 hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse
 echo "  마운트: $MOUNT_DIR"

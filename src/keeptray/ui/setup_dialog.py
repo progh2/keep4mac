@@ -78,7 +78,7 @@ class SetupDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("keep4mac — 초기 설정")
+        self.setWindowTitle("keeptray — 초기 설정")
         self.setFixedWidth(400)
         self.setWindowFlags(
             Qt.WindowType.Dialog

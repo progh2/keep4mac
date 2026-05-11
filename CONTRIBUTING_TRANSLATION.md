@@ -1,8 +1,8 @@
 # 번역 기여 가이드 / Translation Contribution Guide
 
-keep4mac은 gettext 기반 다국어를 지원합니다. 새로운 언어를 추가하거나 기존 번역을 개선하려면 아래 절차를 따르세요.
+keeptray은 gettext 기반 다국어를 지원합니다. 새로운 언어를 추가하거나 기존 번역을 개선하려면 아래 절차를 따르세요.
 
-keep4mac uses gettext-based i18n. Follow the steps below to add a new language or improve an existing translation.
+keeptray uses gettext-based i18n. Follow the steps below to add a new language or improve an existing translation.
 
 ---
 
@@ -10,9 +10,9 @@ keep4mac uses gettext-based i18n. Follow the steps below to add a new language o
 
 ```
 i18n/
-├── ko/LC_MESSAGES/keep4mac.po   # 한국어
-├── en/LC_MESSAGES/keep4mac.po   # English (empty msgstr — falls back to msgid)
-└── ja/LC_MESSAGES/keep4mac.po   # 日本語
+├── ko/LC_MESSAGES/keeptray.po   # 한국어
+├── en/LC_MESSAGES/keeptray.po   # English (empty msgstr — falls back to msgid)
+└── ja/LC_MESSAGES/keeptray.po   # 日本語
 ```
 
 각 언어 코드는 ISO 639-1 두 글자 코드입니다 (예: `fr`, `de`, `zh`).
@@ -21,13 +21,13 @@ i18n/
 
 ## 새 언어 추가 / Adding a New Language
 
-1. `en/LC_MESSAGES/keep4mac.po`를 복사해 새 언어 폴더에 붙여넣습니다.
+1. `en/LC_MESSAGES/keeptray.po`를 복사해 새 언어 폴더에 붙여넣습니다.
    ```
    mkdir -p i18n/fr/LC_MESSAGES
-   cp i18n/en/LC_MESSAGES/keep4mac.po i18n/fr/LC_MESSAGES/keep4mac.po
+   cp i18n/en/LC_MESSAGES/keeptray.po i18n/fr/LC_MESSAGES/keeptray.po
    ```
 
-2. `keep4mac.po` 파일 헤더의 `Language:` 값을 바꿉니다.
+2. `keeptray.po` 파일 헤더의 `Language:` 값을 바꿉니다.
    ```
    "Language: fr\n"
    ```
@@ -76,7 +76,7 @@ i18n/
 | `Pin / Unpin` | 핀 고정 툴팁 |
 | `Save` | 저장 버튼 |
 | `Loading image…` | 이미지 로딩 중 텍스트 |
-| `About keep4mac` | About 다이얼로그 제목 |
+| `About keeptray` | About 다이얼로그 제목 |
 | `Google Keep Menu Bar App` | About 다이얼로그 설명 |
 | `Version` | 버전 레이블 |
 | `Made by` | 만든 이 레이블 |

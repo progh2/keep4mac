@@ -7,8 +7,8 @@ from PIL import Image, ImageDraw
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
-from keep4mac.api.keep_client import KeepClient
-from keep4mac.ui.panel import MainPanel
+from keeptray.api.keep_client import KeepClient
+from keeptray.ui.panel import MainPanel
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +56,14 @@ class WindowsTray:
     def start(self):
         """트레이를 백그라운드 스레드에서 시작하고 drain 타이머를 활성화한다."""
         menu = pystray.Menu(
-            pystray.MenuItem("keep4mac", self._on_toggle, default=True),
+            pystray.MenuItem("keeptray", self._on_toggle, default=True),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("종료", self._on_quit),
         )
         self._icon = pystray.Icon(
-            "keep4mac",
+            "keeptray",
             _make_icon_image(),
-            "keep4mac",
+            "keeptray",
             menu,
         )
         self._icon.run_detached()
