@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -55,15 +58,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e .
-          pip install "pyinstaller>=6.0" "pyqt6==6.7.1"
+          pip install "pyinstaller>=6.0" "pyqt6==6.7.1" "Babel"
 
       - name: Compile .po → .mo
-        shell: pwsh
-        run: |
-          foreach ($lang in @("ko", "en", "ja")) {
-            msgfmt "i18n/$lang/LC_MESSAGES/keep4mac.po" `
-                   -o "i18n/$lang/LC_MESSAGES/keep4mac.mo"
-          }
+        run: pybabel compile -d i18n -D keep4mac
 
       - name: Build EXE
         run: python -m PyInstaller keep4mac_win.spec --noconfirm
