@@ -1,4 +1,5 @@
 """Playwright Chromium 자동 설치 다이얼로그."""
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -24,15 +25,19 @@ def _install_command() -> tuple[list[str], dict | None]:
     """playwright install chromium 실행 인자와 환경변수를 반환한다."""
     if getattr(sys, "frozen", False):
         from playwright._impl._driver import get_driver_env
+        env = get_driver_env()
+        # 영구 브라우저 경로를 subprocess에도 전달 (PyInstaller 임시 경로 방지)
+        if "PLAYWRIGHT_BROWSERS_PATH" in os.environ:
+            env["PLAYWRIGHT_BROWSERS_PATH"] = os.environ["PLAYWRIGHT_BROWSERS_PATH"]
         try:
             # Playwright ≥1.45: compute_driver_executable() → (node_exe, cli_js)
             from playwright._impl._driver import compute_driver_executable
             node_exe, cli_js = compute_driver_executable()
-            return [node_exe, cli_js, "install", "chromium"], get_driver_env()
+            return [node_exe, cli_js, "install", "chromium"], env
         except ImportError:
             # Playwright <1.45: get_driver_executable() → driver_path string
             from playwright._impl._driver import get_driver_executable
-            return [get_driver_executable(), "install", "chromium"], get_driver_env()
+            return [get_driver_executable(), "install", "chromium"], env
     else:
         return [sys.executable, "-m", "playwright", "install", "chromium"], None
 
