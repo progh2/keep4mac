@@ -1,10 +1,10 @@
 # PRD: keeptray
 
-> **문서 버전**: v0.1.42 기준 현행화 (2026-05-10)
+> **문서 버전**: v0.1.56 기준 현행화 (2026-05-11)
 
 ## 개요
 
-Google Keep과 연동되는 macOS 메뉴바 앱. 언제든 트레이에서 열어 Keep 노트를 조회·작성·편집·삭제할 수 있는 경량 데스크탑 클라이언트.
+Google Keep과 연동되는 macOS · Windows 데스크탑 트레이 앱. 언제든 트레이에서 열어 Keep 노트를 조회·작성·편집·삭제할 수 있는 경량 크로스플랫폼 클라이언트.
 
 ---
 
@@ -16,7 +16,7 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 ## 목표 사용자
 
-- macOS를 주 개발/업무 환경으로 사용하며 Google Keep에 메모를 남기는 사용자
+- macOS 또는 Windows를 주 개발/업무 환경으로 사용하며 Google Keep에 메모를 남기는 사용자
 - 노트 내용을 자주 복사해 다른 곳에 붙여넣는 워크플로를 가진 사용자
 - 한국어·영어·일본어 사용자
 
@@ -26,7 +26,7 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 ### 1. Google 계정 인증
 - **Playwright Chromium** 브라우저를 자동 실행해 Google 계정 로그인
-- 인증 쿠키(SAPISID)를 macOS Keychain과 `~/.config/keeptray/session.json`에 저장
+- 인증 쿠키(SAPISID)를 macOS Keychain / Windows 자격 증명 관리자와 `~/.config/keeptray/session.json`에 저장
 - 재실행 시 저장된 세션 자동 복원 (재로그인 불필요)
 - Google 앱 비밀번호·별도 API 키 불필요
 
@@ -84,7 +84,8 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 - 앱 재시작 후에도 유지
 
 ### 10. 자동 시작
-- macOS LaunchAgent 등록/해제로 로그인 시 자동 실행 토글
+- macOS: LaunchAgent 등록/해제로 로그인 시 자동 실행 토글
+- Windows: 레지스트리 `HKCU\...\Run` 키 등록/해제
 
 ### 11. 다국어 지원
 - 한국어·영어·일본어 지원 (gettext `.po`/`.mo` 파일)
@@ -94,9 +95,9 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 - 버전 정보, 제작자 GitHub 링크, 저장소 링크
 
 ### 13. 배포
-- PyInstaller로 단일 `.app` 번들 + ad-hoc 코드서명
-- DMG 패키징 (drag-to-install)
-- GitHub Actions 태그 푸시 시 자동 빌드 및 릴리즈 첨부
+- macOS: PyInstaller `.app` 번들 + ad-hoc 코드서명 + DMG 패키징
+- Windows: PyInstaller `.exe` + ZIP 패키징 (첫 실행 시 Chromium 자동 다운로드)
+- GitHub Actions 태그 푸시 시 macOS/Windows 동시 빌드 및 릴리즈 자동 첨부
 
 ---
 
@@ -116,8 +117,8 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 | 항목 | 기준 |
 |------|------|
 | 패널 열림 응답 | 500ms 이내 |
-| 지원 OS | macOS 12 Monterey 이상 |
-| 인증 정보 저장 | macOS Keychain (평문 저장 금지) |
+| 지원 OS | macOS 12 Monterey 이상, Windows 10 이상 |
+| 인증 정보 저장 | macOS Keychain / Windows 자격 증명 관리자 (평문 저장 금지) |
 | 라이선스 | GNU GPL v3 (PyQt6 GPL 조건 충족) |
 
 ---
@@ -126,16 +127,17 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 | 영역 | 선택 | 이유 |
 |------|------|------|
-| 언어 | Python 3.13 | gkeepapi 생태계 |
+| 언어 | Python 3.11 이상 | gkeepapi 생태계 |
 | Keep 연동 | gkeepapi (비공식) + SAPISIDHASH | 유일한 Keep API 라이브러리 |
 | 브라우저 로그인 | Playwright (Chromium) | Google 로그인 자동화 |
-| GUI | PyQt6 6.7.1 | 풍부한 위젯, macOS 호환성 |
-| 메뉴바 | rumps + PyObjC | macOS 네이티브 트레이 직접 제어 |
-| 세션 저장 | keyring (macOS Keychain) | 보안 자격증명 관리 |
+| GUI | PyQt6 6.7.1 | 풍부한 위젯, 크로스플랫폼 |
+| 트레이 (macOS) | rumps + PyObjC | macOS 네이티브 메뉴바 직접 제어 |
+| 트레이 (Windows) | pystray + Pillow | Windows 시스템 트레이 |
+| 세션 저장 | keyring | macOS Keychain / Windows 자격 증명 관리자 |
 | 문서 저장 | python-docx, python-hwpx | Word·한글 형식 내보내기 |
 | 번역 | MyMemory 무료 API | 별도 API 키 불필요 |
 | 다국어 | gettext (표준 라이브러리) | .po/.mo 파일 기반, 런타임 전환 |
-| 패키징 | PyInstaller 6.x | macOS .app 번들 생성 |
+| 패키징 | PyInstaller 6.x | macOS .app / Windows .exe 번들 생성 |
 
 ---
 
@@ -180,5 +182,4 @@ Google Keep은 웹·모바일 중심 서비스라 macOS에서 빠르게 접근�
 
 | 이슈 | 내용 | 구분 |
 |------|------|------|
-| [#37](../../issues/37) | UI 아이콘 스타일 통일 | enhancement |
-| [#42](../../issues/42) | macOS HIG 디자인 가이드라인 적용 | enhancement |
+| [#60](../../issues/60) | 노트 목록 정렬 (수정일·생성일·제목 기준) | enhancement |

@@ -1,6 +1,6 @@
 # keeptray
 
-Google Keep macOS 메뉴바 앱. 트레이 아이콘을 클릭하면 Keep 노트를 바로 조회·작성·수정·삭제할 수 있습니다.
+Google Keep 데스크톱 트레이 앱 (macOS · Windows). 트레이 아이콘을 클릭하면 Keep 노트를 바로 조회·작성·수정·삭제할 수 있습니다.
 
 ## 주요 기능
 
@@ -16,7 +16,7 @@ Google Keep macOS 메뉴바 앱. 트레이 아이콘을 클릭하면 Keep 노트
 - **내보내기·공유** — Markdown / TXT / PNG / PDF / 한글(.hwpx) / Word(.docx) 저장, 이메일·카카오톡 공유
 - **내 메일로 보내기** — 설정에 내 메일 주소 저장 후 원클릭 전송
 - **번역 새 노트** — MyMemory API로 노트를 번역하여 새 노트 생성
-- **로그인 자동 시작** — 사이드바 토글로 macOS LaunchAgent 등록/해제
+- **자동 시작** — macOS LaunchAgent / Windows 레지스트리 등록·해제
 - **다국어 지원** — 한국어·영어·일본어, 사이드바에서 즉시 전환 가능
 - **한국어 IME 최적화** — macOS 한글 입력 첫 글자 자소 분리 현상 수정
 
@@ -29,24 +29,37 @@ keeptray은 **Playwright Chromium**을 사용해 Google 계정에 로그인합�
 3. Google 계정으로 로그인하면 인증이 자동으로 완료됩니다
 4. 이후 실행부터는 저장된 세션이 자동으로 복원됩니다 (재로그인 불필요)
 
-> 인증 쿠키(SAPISID)는 macOS Keychain과 `~/.config/keeptray/session.json`에 저장됩니다.  
+> 인증 쿠키(SAPISID)는 macOS Keychain / Windows 자격 증명 관리자와 `~/.config/keeptray/session.json`에 저장됩니다.  
 > Google 앱 비밀번호나 별도 API 키는 필요하지 않습니다.
 
-## 설치 (DMG)
+## 설치
+
+### macOS (.dmg)
 
 1. [Releases](../../releases) 에서 `keeptray-[버전].dmg` 다운로드
 2. DMG를 열고 `keeptray.app`을 Applications 폴더로 드래그
 
-### 최초 실행 시 필수 명령어
+#### 최초 실행 시 필수 명령어
 
-macOS는 인터넷에서 다운로드한 앱을 **Gatekeeper**로 차단합니다. Apple Developer 인증서 없이 배포된 앱은 별도의 허용 절차가 필요합니다. 아래 명령어를 터미널에서 실행해 격리 속성을 해제한 뒤 앱을 열어주세요.
+macOS는 인터넷에서 다운로드한 앱을 **Gatekeeper**로 차단합니다. Apple Developer 인증서 없이 배포된 앱은 별도의 허용 절차가 필요합니다.
 
 ```bash
 xattr -rd com.apple.quarantine /Applications/keeptray.app && open /Applications/keeptray.app
 ```
 
-- `xattr -rd com.apple.quarantine` : macOS가 붙여놓은 격리(quarantine) 플래그를 제거합니다
-- 이 명령은 **최초 1회**만 실행하면 되며, 이후에는 평소처럼 앱을 클릭해서 실행할 수 있습니다
+이 명령은 **최초 1회**만 실행하면 되며, 이후에는 평소처럼 앱을 클릭해서 실행할 수 있습니다.
+
+### Windows (.zip)
+
+1. [Releases](../../releases) 에서 `keeptray-[버전]-win.zip` 다운로드
+2. ZIP을 원하는 폴더에 압축 해제
+3. `keeptray\keeptray.exe` 실행
+
+#### Windows 첫 실행
+
+- **Chromium 자동 설치**: 첫 실행 시 Google 로그인에 필요한 Chromium 브라우저를 자동으로 다운로드합니다 (약 150MB, 1회만).  
+  다운로드 경로: `%LOCALAPPDATA%\keeptray\ms-playwright`
+- **Windows Defender**: 서명되지 않은 앱으로 경고가 뜰 수 있습니다. "추가 정보 → 실행"을 클릭하면 됩니다.
 
 ## 개발 환경 실행
 
@@ -55,15 +68,15 @@ xattr -rd com.apple.quarantine /Applications/keeptray.app && open /Applications/
 pip install -e .
 
 # 2. Playwright Chromium 설치 (최초 1회)
-#    keeptray은 Google 로그인에 Playwright Chromium을 사용합니다.
-#    앱 실행 전에 반드시 한 번 실행해야 합니다.
 python -m playwright install chromium
 
 # 3. 실행
 python -m keeptray
 ```
 
-## 배포 빌드 (.dmg)
+## 배포 빌드
+
+### macOS (.dmg)
 
 ```bash
 # PyInstaller + 코드서명 + DMG 생성
@@ -71,23 +84,33 @@ bash build_dmg.sh
 # → dist/keeptray-[버전].dmg
 ```
 
-> **빌드 요구사항**: `pip install pyinstaller pyqt6==6.7.1 playwright`  
-> codesign은 ad-hoc 서명(`-`)을 사용하므로 Apple Developer 계정 불필요.  
-> DMG에는 Playwright Chromium이 포함되지 않으므로, 첫 실행 시 Chromium 다운로드가 필요합니다.
+> **빌드 요구사항**: `pip install pyinstaller pyqt6==6.7.1`  
+> codesign은 ad-hoc 서명(`-`)을 사용하므로 Apple Developer 계정 불필요.
+
+### Windows (.zip)
+
+```powershell
+# PyInstaller + ZIP 패키징
+python -m PyInstaller keeptray_win.spec --noconfirm
+# → dist/keeptray/ 폴더 → ZIP으로 압축
+```
+
+> **빌드 요구사항**: `pip install pyinstaller pyqt6==6.7.1`
 
 ## 기술 스택
 
-| 구분 | 라이브러리 | 설명 |
-|------|-----------|------|
-| GUI | [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) 6.7.1 | Qt6 기반 크로스플랫폼 GUI 프레임워크. 노트 목록·에디터·로그인 등 모든 UI에 사용 |
-| 메뉴바 | [rumps](https://github.com/jaredks/rumps) | macOS 메뉴바 앱을 간편하게 만들어주는 Python 래퍼 |
-| macOS 네이티브 | [PyObjC](https://pyobjc.readthedocs.io/) | Objective-C/AppKit API를 Python에서 직접 호출. 트레이 클릭·아이콘·CALayer에 사용 |
-| Keep API | [gkeepapi](https://github.com/kiwiz/gkeepapi) | 비공식 Google Keep API 클라이언트. SAPISIDHASH 인증 방식으로 연동 |
-| 브라우저 로그인 | [Playwright](https://playwright.dev/python/) | Chromium 제어로 Google 계정 로그인 처리. 자동화된 쿠키 추출에 사용 |
-| 세션 저장 | [keyring](https://github.com/jaraco/keyring) | macOS Keychain에 인증 정보를 안전하게 저장·불러오기 |
-| 문서 저장 | [python-docx](https://python-docx.readthedocs.io/), [python-hwpx](https://github.com/airmang/python-hwpx) | Word(.docx) 및 한글(.hwpx) 형식 내보내기 |
-| 패키징 | [PyInstaller](https://pyinstaller.org/) 6.x | Python 앱을 단일 `.app` 번들로 패키징 |
-| 다국어 | [gettext](https://docs.python.org/3/library/gettext.html) (표준 라이브러리) | `.po`/`.mo` 파일 기반 번역. 시스템 언어 자동 감지 및 런타임 언어 전환 지원 |
+| 구분 | 라이브러리 | 플랫폼 | 설명 |
+|------|-----------|--------|------|
+| GUI | [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) 6.7.1 | 공통 | Qt6 기반 크로스플랫폼 GUI 프레임워크 |
+| 트레이 (macOS) | [rumps](https://github.com/jaredks/rumps) | macOS | macOS 메뉴바 앱 Python 래퍼 |
+| 트레이 (Windows) | [pystray](https://github.com/moses-palmer/pystray) + [Pillow](https://python-pillow.org/) | Windows | Windows 시스템 트레이 아이콘 |
+| macOS 네이티브 | [PyObjC](https://pyobjc.readthedocs.io/) | macOS | Objective-C/AppKit API Python 바인딩 |
+| Keep API | [gkeepapi](https://github.com/kiwiz/gkeepapi) | 공통 | 비공식 Google Keep API 클라이언트 |
+| 브라우저 로그인 | [Playwright](https://playwright.dev/python/) | 공통 | Chromium 제어로 Google 계정 로그인 처리 |
+| 세션 저장 | [keyring](https://github.com/jaraco/keyring) | 공통 | macOS Keychain / Windows 자격 증명 관리자 |
+| 문서 저장 | [python-docx](https://python-docx.readthedocs.io/), [python-hwpx](https://github.com/airmang/python-hwpx) | 공통 | Word(.docx) / 한글(.hwpx) 내보내기 |
+| 패키징 | [PyInstaller](https://pyinstaller.org/) 6.x | 공통 | Python 앱을 단일 실행 파일로 패키징 |
+| 다국어 | [gettext](https://docs.python.org/3/library/gettext.html) | 공통 | `.po`/`.mo` 기반 번역, 런타임 언어 전환 |
 
 ## 번역 기여
 
