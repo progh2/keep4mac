@@ -80,6 +80,6 @@ PyQt6 UI, rumps(macOS)/pystray(Windows) 트레이, gkeepapi 비공식 API, Playw
 
 ## 컨텍스트 앵커
 - intent: macOS/Windows 데스크탑 트레이 Google Keep 앱 — 크로스플랫폼 안정화 및 기능 완성
-- changes_made: v0.1.59 기준 (2026-05-12) — #60 노트 목록 정렬(↕ 버튼, 수정일/생성일/제목×오름/내림차순, settings.json 저장), NoteModel created 필드 추가
-- decisions: 핀 고정 노트는 정렬 적용 후에도 항상 상단 유지, sort_key 반환값 일관성(title→str, 날짜→float), reverse=desc 단순화
+- changes_made: v0.1.63 기준 (2026-05-12) — #70 폰트설정(목록제목/내용, 편집기제목/본문 × 종류+크기, FontSettingsDialog), #71 보관함, #69 휴지통(SpecialNotesWidget, sidebar 버튼, 복원/영구삭제/휴지통비우기), #68 ProcessSingleton 수정, 시작 시 패널 자동표시
+- decisions: NoteModel에 archived/trashed 미추가(뷰 자체가 이미 필터링됨), gkeepapi archived 프로퍼티 직접 set/unset, empty_trash는 note.delete()+sync
 - next_steps: 오픈 이슈 없음, Windows 사용자 피드백 수집
