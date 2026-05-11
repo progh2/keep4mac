@@ -102,6 +102,7 @@ class MainPanel(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._client = client
         self._quit_callback = quit_callback
+        self._update_checked = False
         self.setFixedSize(420, 580 + self._DRAG_H)
         self._build_ui()
         self.setStyleSheet("QWidget#MainPanel { background: transparent; }")
@@ -229,6 +230,9 @@ class MainPanel(QWidget):
         self.show()
         self.raise_()
         self.activateWindow()
+        if not self._update_checked:
+            self._update_checked = True
+            QTimer.singleShot(5000, self._check_update)
 
     def toggle_visibility(self):
         """트레이 아이콘 클릭 시 패널을 열거나 닫는다."""
@@ -280,6 +284,70 @@ class MainPanel(QWidget):
     def _on_trash(self):
         self._stack.setCurrentIndex(_IDX_TRASH)
         self._trash_w.load()
+
+    def _check_update(self):
+        from keeptray.core import updater as _up
+        from PyQt6.QtCore import QThread, pyqtSignal
+
+        class _CheckThread(QThread):
+            found = pyqtSignal(dict)
+            def run(self):
+                info = _up.check_update()
+                if info:
+                    self.found.emit(info)
+
+        self._upd_thread = _CheckThread()
+        self._upd_thread.found.connect(self._on_update_found)
+        self._upd_thread.start()
+
+    def _on_update_found(self, info: dict):
+        ver = info["version"]
+        toast = self._make_update_toast(ver, info)
+        toast.show()
+        QTimer.singleShot(8000, toast.deleteLater)
+
+    def _make_update_toast(self, ver: str, info: dict) -> "QLabel":
+        from keeptray.ui.update_dialog import UpdateDialog
+        toast = QLabel(f"🎉  keeptray {ver}  {_('is available!')}  — {_('Click to update')}", self)
+        toast.setWordWrap(False)
+        toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        toast.setStyleSheet("""
+            QLabel {
+                background: #007AFF;
+                color: white;
+                font-size: 12px;
+                border-radius: 8px;
+                padding: 10px 14px;
+            }
+        """)
+        toast.setCursor(Qt.CursorShape.PointingHandCursor)
+        toast.adjustSize()
+        w = min(toast.sizeHint().width() + 20, self.width() - 32)
+        toast.setFixedWidth(w)
+        toast.move((self.width() - w) // 2, self.height() - toast.sizeHint().height() - 20)
+
+        def _open_dialog(event):
+            toast.deleteLater()
+            dlg = UpdateDialog(info, self)
+            dlg.install_ready.connect(self._on_install_ready)
+            dlg.exec()
+
+        toast.mousePressEvent = _open_dialog
+        return toast
+
+    def _on_install_ready(self, path: str):
+        from pathlib import Path
+        from keeptray.core import updater as _up
+        try:
+            _up.apply_update(Path(path))
+        except Exception as e:
+            self._show_toast(f"❌  {e}")
+            return
+        if self._quit_callback:
+            self._quit_callback()
+        else:
+            import sys
+            sys.exit(0)
 
     def _on_font_settings(self):
         from keeptray.core import settings as app_settings
