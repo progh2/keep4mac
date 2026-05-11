@@ -7,15 +7,15 @@ SRC = str(Path("src").resolve())
 
 _metadata = []
 for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "pystray", "PIL",
-             "python-docx", "python-hwpx"]:
+             "python-docx", "python-hwpx", "certifi", "charset_normalizer"]:
     try:
         _metadata += copy_metadata(_pkg)
     except Exception:
         pass
 
-# python-docx / python-hwpx 템플릿·스켈레톤 파일 포함
+# 데이터 파일이 필요한 패키지
 _extra_data = []
-for _pkg in ["docx", "hwpx"]:
+for _pkg in ["docx", "hwpx", "certifi"]:
     try:
         _extra_data += collect_data_files(_pkg)
     except Exception:
@@ -30,25 +30,52 @@ a = Analysis(
         ("i18n", "i18n"),
     ] + _metadata + _extra_data,
     hiddenimports=[
+        # Qt
         "PyQt6.QtCore",
         "PyQt6.QtGui",
         "PyQt6.QtWidgets",
+
+        # 인증·키체인
+        "keyring",
+        "keyring.errors",
         "keyring.backends",
         "keyring.backends.Windows",
-        "pkg_resources.py2_warn",
+        "jaraco.classes",
+        "jaraco.functools",
+        "jaraco.context",
+
+        # Keep API
+        "gkeepapi",
+        "gkeepapi.node",
+        "gpsoauth",
+        "gpsoauth.google",
+        "future",
+        "future.moves",
+
+        # 네트워크·SSL
+        "requests",
+        "urllib3",
+        "urllib3.util",
+        "urllib3.util.retry",
+        "certifi",
+        "charset_normalizer",
+        "idna",
+
+        # Playwright
         "playwright.sync_api",
         "playwright.async_api",
         "playwright._impl._api_types",
-        "ssl",
-        "_ssl",
-        "gpsoauth",
-        "gpsoauth.google",
+        "pyee",
+        "greenlet",
+
+        # 트레이 아이콘
         "pystray",
         "pystray._win32",
         "PIL",
         "PIL.Image",
         "PIL.ImageDraw",
-        "winreg",
+
+        # 문서 저장
         "docx",
         "docx.oxml",
         "docx.oxml.ns",
@@ -58,7 +85,14 @@ a = Analysis(
         "lxml",
         "lxml.etree",
         "lxml._elementpath",
+
+        # 기타 런타임
+        "pkg_resources.py2_warn",
+        "ssl",
+        "_ssl",
+        "winreg",
         "zipfile",
+        "typing_extensions",
     ],
     hookspath=[],
     hooksconfig={},
