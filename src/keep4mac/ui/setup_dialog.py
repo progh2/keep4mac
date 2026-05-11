@@ -23,11 +23,17 @@ def chromium_installed() -> bool:
 def _install_command() -> tuple[list[str], dict | None]:
     """playwright install chromium 실행 인자와 환경변수를 반환한다."""
     if getattr(sys, "frozen", False):
-        # PyInstaller 번들: playwright Node.js 드라이버를 직접 실행
-        from playwright._impl._driver import get_driver_executable, get_driver_env
-        return [get_driver_executable(), "install", "chromium"], get_driver_env()
+        from playwright._impl._driver import get_driver_env
+        try:
+            # Playwright ≥1.45: compute_driver_executable() → (node_exe, cli_js)
+            from playwright._impl._driver import compute_driver_executable
+            node_exe, cli_js = compute_driver_executable()
+            return [node_exe, cli_js, "install", "chromium"], get_driver_env()
+        except ImportError:
+            # Playwright <1.45: get_driver_executable() → driver_path string
+            from playwright._impl._driver import get_driver_executable
+            return [get_driver_executable(), "install", "chromium"], get_driver_env()
     else:
-        # 개발 환경: python -m playwright
         return [sys.executable, "-m", "playwright", "install", "chromium"], None
 
 

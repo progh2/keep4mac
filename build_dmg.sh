@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keep4mac"
-VERSION="0.1.47"
+VERSION="0.1.48"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"
@@ -54,25 +54,36 @@ echo "▶ DMG 생성..."
 MOUNT_DIR="/tmp/${APP_NAME}_work_$$"
 rm -f "dist/${DMG_NAME}" "$TMP_DMG"
 
+# 앱 실제 크기 측정 후 여유 포함 용량 산정
+APP_SIZE_MB=$(du -sm "$APP_PATH" 2>/dev/null | cut -f1)
+DMG_SIZE_MB=$(( APP_SIZE_MB + 200 ))
+if [ "$DMG_SIZE_MB" -lt 800 ]; then
+    DMG_SIZE_MB=800
+fi
+echo "  앱 크기: ${APP_SIZE_MB}MB → DMG 용량: ${DMG_SIZE_MB}MB"
+
 # 임시 읽기-쓰기 이미지 생성
-hdiutil create -size 700m -fs HFS+ -volname "$APP_NAME" "$TMP_DMG" -quiet
+hdiutil create -size "${DMG_SIZE_MB}m" -fs HFS+ -volname "$APP_NAME" "$TMP_DMG"
 
 # 고유한 임시 경로에 마운트 (기존 /Volumes/keep4mac 충돌 방지)
 mkdir -p "$MOUNT_DIR"
-hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
+hdiutil attach "$TMP_DMG" -mountpoint "$MOUNT_DIR" -nobrowse
 echo "  마운트: $MOUNT_DIR"
 
 # .app 드래그 설치 + 안내 문서
-ditto "$APP_PATH" "$MOUNT_DIR/keep4mac.app"
+rsync -a --progress "$APP_PATH" "$MOUNT_DIR/"
 ln -s /Applications "$MOUNT_DIR/Applications"
-cp "docs/install_guide.txt" "$MOUNT_DIR/꼭 읽어주세요.txt"
+if [ -f "docs/install_guide.txt" ]; then
+    cp "docs/install_guide.txt" "$MOUNT_DIR/ReadMe.txt"
+fi
 
 # 마운트 해제
-hdiutil detach "$MOUNT_DIR" -quiet
+sync
+hdiutil detach "$MOUNT_DIR" -force
 rm -rf "$MOUNT_DIR"
 
 # 압축 DMG로 변환
-hdiutil convert "$TMP_DMG" -format UDZO -o "dist/${DMG_NAME}" -quiet
+hdiutil convert "$TMP_DMG" -format UDZO -o "dist/${DMG_NAME}"
 rm -f "$TMP_DMG"
 
 echo "✓ 완료: dist/${DMG_NAME}"
