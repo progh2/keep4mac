@@ -194,6 +194,49 @@ class SidebarWidget(QWidget):
                 _BTN_ACTIVE_CSS if lid == self._active_label else _BTN_CSS
             )
 
+    # ── 테마 ──────────────────────────────────────────────────
+
+    def apply_theme(self):
+        from keeptray.core.theme import get_colors
+        c = get_colors()
+        btn_css = f"""
+            QPushButton {{
+                background: transparent;
+                border: none;
+                color: {c['text3']};
+                font-size: 10px;
+                padding: 4px 2px;
+                border-radius: 6px;
+            }}
+            QPushButton:hover {{
+                background: {c['surface2']};
+                color: {c['text']};
+            }}
+            QPushButton:pressed {{
+                background: {c['border2']};
+                color: {c['text']};
+            }}
+        """
+        btn_active_css = f"""
+            QPushButton {{
+                background: {c['accent']}22;
+                border: none;
+                color: {c['accent']};
+                font-size: 10px;
+                padding: 4px 2px;
+                border-radius: 6px;
+            }}
+            QPushButton:hover {{ background: {c['accent']}33; color: {c['accent']}; }}
+            QPushButton:pressed {{ background: {c['accent']}44; }}
+        """
+        for btn in (self._new_note_btn, self._sync_btn,
+                    self._archive_btn, self._trash_btn, self._settings_btn):
+            btn.setStyleSheet(btn_css)
+        for lid, btn in self._label_btns.items():
+            btn.setStyleSheet(
+                btn_active_css if lid == self._active_label else btn_css
+            )
+
     # ── retranslate ───────────────────────────────────────────
 
     def retranslate_ui(self):

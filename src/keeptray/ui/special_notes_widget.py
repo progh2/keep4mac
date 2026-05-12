@@ -73,29 +73,30 @@ class SpecialNotesWidget(QWidget):
 
         # 헤더
         header = QWidget()
+        self._header_widget = header
         header.setFixedHeight(48)
         header.setStyleSheet("background: #f5f5f7; border-bottom: 1px solid #d1d1d6;")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(8, 0, 8, 0)
 
-        back_btn = QPushButton("←")
-        back_btn.setFixedSize(32, 32)
-        back_btn.setToolTip(_("Back"))
-        back_btn.setStyleSheet(
+        self._back_btn = QPushButton("←")
+        self._back_btn.setFixedSize(32, 32)
+        self._back_btn.setToolTip(_("Back"))
+        self._back_btn.setStyleSheet(
             "QPushButton { background: transparent; border: none;"
             "font-size: 16px; color: #007AFF; }"
             "QPushButton:hover { background: #e5e5ea; border-radius: 8px; }"
         )
-        back_btn.clicked.connect(self.back_requested)
-        hl.addWidget(back_btn)
+        self._back_btn.clicked.connect(self.back_requested)
+        hl.addWidget(self._back_btn)
 
         if self._mode == "archive":
             title_text = _("📦  Archive")
         else:
             title_text = _("🗑  Trash")
-        title_lbl = QLabel(title_text)
-        title_lbl.setStyleSheet("font-size: 14px; font-weight: 600; color: #1c1c1e;")
-        hl.addWidget(title_lbl, 1)
+        self._title_lbl = QLabel(title_text)
+        self._title_lbl.setStyleSheet("font-size: 14px; font-weight: 600; color: #1c1c1e;")
+        hl.addWidget(self._title_lbl, 1)
 
         if self._mode == "trash":
             self._empty_btn = QPushButton(_("Empty Trash"))
@@ -110,7 +111,8 @@ class SpecialNotesWidget(QWidget):
         root.addWidget(header)
 
         # 스크롤 영역
-        scroll = QScrollArea()
+        self._scroll = QScrollArea()
+        scroll = self._scroll
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -125,6 +127,24 @@ class SpecialNotesWidget(QWidget):
 
         scroll.setWidget(self._body)
         root.addWidget(scroll)
+
+    # ── 테마 ────────────────────────────────────────────────────
+
+    def apply_theme(self):
+        from keeptray.core.theme import get_colors
+        c = get_colors()
+        self._header_widget.setStyleSheet(
+            f"background: {c['surface2']}; border-bottom: 1px solid {c['border']};"
+        )
+        self._title_lbl.setStyleSheet(
+            f"font-size: 14px; font-weight: 600; color: {c['text']};"
+        )
+        self._back_btn.setStyleSheet(
+            f"QPushButton {{ background: transparent; border: none; font-size: 16px; color: {c['accent']}; }}"
+            f"QPushButton:hover {{ background: {c['border2']}; border-radius: 8px; }}"
+        )
+        self._scroll.setStyleSheet(f"QScrollArea {{ background: {c['surface']}; }}")
+        self._body.setStyleSheet(f"background: {c['surface']};")
 
     # ── 데이터 ───────────────────────────────────────────────────
 
@@ -152,10 +172,17 @@ class SpecialNotesWidget(QWidget):
             self._layout.insertWidget(i, card)
 
     def _make_card(self, note: NoteModel) -> QWidget:
+        from keeptray.core.models import NoteColor
+        from keeptray.core.theme import get_colors, is_dark
+        c = get_colors()
+        bg = c['surface2'] if (note.color == NoteColor.DEFAULT and is_dark()) else note.color_hex
+        text_color = c['text']
+        sub_color = c['text2']
+
         outer = QFrame()
         outer.setStyleSheet(f"""
             QFrame {{
-                background: {note.color_hex};
+                background: {bg};
                 border: none;
                 border-radius: 10px;
             }}
@@ -166,14 +193,14 @@ class SpecialNotesWidget(QWidget):
 
         if note.title:
             title = QLabel(note.title)
-            title.setStyleSheet("font-size: 13px; font-weight: 600; color: #1c1c1e; background: transparent;")
+            title.setStyleSheet(f"font-size: 13px; font-weight: 600; color: {text_color}; background: transparent;")
             title.setWordWrap(True)
             ol.addWidget(title)
 
         preview = note.preview
         if preview:
             body = QLabel(preview)
-            body.setStyleSheet("font-size: 12px; color: #636366; background: transparent;")
+            body.setStyleSheet(f"font-size: 12px; color: {sub_color}; background: transparent;")
             body.setWordWrap(True)
             ol.addWidget(body)
 

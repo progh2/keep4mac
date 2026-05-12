@@ -117,6 +117,7 @@ class MainPanel(QWidget):
         self._build_ui()
         self.setStyleSheet("QWidget#MainPanel { background: transparent; }")
         self.setObjectName("MainPanel")
+        self._apply_all_themes()
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -190,14 +191,15 @@ class MainPanel(QWidget):
     # ── 렌더링 ───────────────────────────────────────────────
 
     def paintEvent(self, event):
-        """둥근 흰색 배경과 테두리를 직접 그린다 (Qt stylesheet border-radius는 실제 클리핑 안 함)."""
+        """둥근 배경과 테두리를 직접 그린다 (Qt stylesheet border-radius는 실제 클리핑 안 함)."""
+        c = _theme.get_colors()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = QRectF(0.5, 0.5, self.width() - 1, self.height() - 1)
         path = QPainterPath()
         path.addRoundedRect(rect, self._RADIUS, self._RADIUS)
-        painter.fillPath(path, QColor("#ffffff"))
-        painter.setPen(QPen(QColor("#d0d0d0"), 1))
+        painter.fillPath(path, QColor(c['surface']))
+        painter.setPen(QPen(QColor(c['border']), 1))
         painter.drawPath(path)
 
     def showEvent(self, event):
@@ -437,11 +439,18 @@ class MainPanel(QWidget):
         )
         self._show_toast(msg)
 
-    def _on_theme_changed(self, key: str):
+    def _apply_all_themes(self):
         c = _theme.get_colors()
         self._drag_bar.apply_theme()
         self._stack.setStyleSheet(f"QStackedWidget {{ background: {c['surface']}; }}")
+        self._sidebar.apply_theme()
         self._notes_w.apply_theme()
+        self._editor_w.apply_theme()
+        self._archive_w.apply_theme()
+        self._trash_w.apply_theme()
+
+    def _on_theme_changed(self, key: str):
+        self._apply_all_themes()
         self.repaint()
 
     def _show_toast(self, message: str):

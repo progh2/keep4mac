@@ -344,6 +344,7 @@ class NoteEditorWidget(QWidget):
 
         # 헤더
         header = QWidget()
+        self._header_widget = header
         header.setFixedHeight(48)
         header.setStyleSheet("background: #f5f5f7; border-bottom: 1px solid #d1d1d6;")
         hl = QHBoxLayout(header)
@@ -449,11 +450,11 @@ class NoteEditorWidget(QWidget):
         links_l.setContentsMargins(10, 8, 10, 8)
         links_l.setSpacing(4)
 
-        links_header = QLabel(_("🔗 Links"))
-        links_header.setStyleSheet(
+        self._links_header = QLabel(_("🔗 Links"))
+        self._links_header.setStyleSheet(
             "font-size: 11px; font-weight: 600; color: #636366; background: transparent;"
         )
-        links_l.addWidget(links_header)
+        links_l.addWidget(self._links_header)
 
         self._links_body = QVBoxLayout()
         self._links_body.setSpacing(2)
@@ -595,17 +596,57 @@ class NoteEditorWidget(QWidget):
 
     # ── 공개 API ──────────────────────────────────────────────
 
+    def apply_theme(self):
+        from keeptray.core.theme import get_colors
+        c = get_colors()
+        self._header_widget.setStyleSheet(
+            f"background: {c['surface2']}; border-bottom: 1px solid {c['border']};"
+        )
+        self._header_label.setStyleSheet(
+            f"font-size: 14px; font-weight: 600; color: {c['text']}; background: transparent;"
+        )
+        self._links_header.setStyleSheet(
+            f"font-size: 11px; font-weight: 600; color: {c['text3']}; background: transparent;"
+        )
+        self._img_section.setStyleSheet(
+            f"QFrame {{ background: {c['surface2']}; border: 1px solid {c['border']}; border-radius: 10px; }}"
+        )
+        self._img_display.setStyleSheet(
+            f"background: {c['border2']}; border-radius: 8px;"
+        )
+        self._links_section.setStyleSheet(
+            f"QFrame {{ background: {c['surface2']}; border: 1px solid {c['border']}; border-radius: 10px; }}"
+        )
+        self._footer_widget.setStyleSheet(
+            f"background: {c['surface2']}; border-top: 1px solid {c['border']};"
+        )
+        _icon_btn_css = f"""
+            QPushButton {{
+                background: transparent; color: {c['text2']};
+                border: 1px solid {c['border']}; border-radius: 8px; font-size: 14px;
+            }}
+            QPushButton:hover {{ background: {c['border2']}; }}
+            QPushButton:pressed {{ background: {c['border']}; }}
+        """
+        for btn in (self._archive_btn, self._copy_btn, self._label_btn,
+                    self._export_btn, self._revert_btn):
+            btn.setStyleSheet(_icon_btn_css)
+        self._apply_bg(self._current_color)
+        self.apply_fonts()
+
     def apply_fonts(self):
         """설정에서 폰트를 읽어 제목·본문 위젯에 즉시 적용한다."""
         from keeptray.core import settings as app_settings
+        from keeptray.core.theme import get_colors
         fonts = app_settings.get_fonts()
+        c = get_colors()
 
         ft = fonts["editor_title"]
         family_css = f'font-family: "{ft["family"]}";' if ft["family"] else ""
         self._title_edit.setStyleSheet(f"""
             QLineEdit {{
-                font-size: {ft["size"]}px; {family_css} font-weight: 600; color: #1c1c1e;
-                border: none; border-bottom: 1px solid #d1d1d6;
+                font-size: {ft["size"]}px; {family_css} font-weight: 600; color: {c['text']};
+                border: none; border-bottom: 1px solid {c['border']};
                 padding: 4px 0; background: transparent;
             }}
         """)
@@ -613,7 +654,7 @@ class NoteEditorWidget(QWidget):
         fb = fonts["editor_body"]
         family_css = f'font-family: "{fb["family"]}";' if fb["family"] else ""
         self._body_edit.setStyleSheet(f"""
-            QTextEdit {{ font-size: {fb["size"]}px; {family_css} color: #1c1c1e; border: none; background: transparent; }}
+            QTextEdit {{ font-size: {fb["size"]}px; {family_css} color: {c['text']}; border: none; background: transparent; }}
         """)
 
     def retranslate_ui(self):
@@ -885,10 +926,12 @@ class NoteEditorWidget(QWidget):
             """)
 
     def _apply_bg(self, color: NoteColor):
-        hex_color = COLOR_HEX[color]
+        from keeptray.core.theme import get_colors, is_dark
+        c = get_colors()
+        hex_color = c['surface'] if (color == NoteColor.DEFAULT and is_dark()) else COLOR_HEX[color]
         self._body_widget.setStyleSheet(f"background: {hex_color};")
         self._footer_widget.setStyleSheet(
-            f"background: {hex_color}; border-top: 1px solid #d1d1d6;"
+            f"background: {c['surface2']}; border-top: 1px solid {c['border']};"
         )
 
     def _on_save(self):
