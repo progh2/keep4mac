@@ -216,7 +216,10 @@ class MainPanel(QWidget):
             screen: QScreen = QApplication.primaryScreen()
             sg = screen.availableGeometry()
             x = sg.right() - self.width() - 8
-            y = sg.top() + 4
+            if sys.platform == "darwin":
+                y = sg.top() + 4          # 메뉴바 바로 아래
+            else:
+                y = sg.bottom() - self.height() - 8   # 트레이 바로 위
             self.move(x, y)
 
         if self._client.is_logged_in:
