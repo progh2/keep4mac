@@ -326,6 +326,7 @@ class NoteEditorWidget(QWidget):
         self._revert_btn: QPushButton | None = None
         self._build_ui()
         self.apply_fonts()
+        self._title_edit.returnPressed.connect(self._body_edit.setFocus)
         self._title_edit.textChanged.connect(self._update_revert_btn)
         self._body_edit.textChanged.connect(self._update_revert_btn)
 
