@@ -3,7 +3,7 @@ import random
 
 import rumps
 from AppKit import NSColor, NSImage, NSImageSymbolConfiguration, NSObject, NSTrackingArea
-from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication, QTimer
 from PyQt6.QtWidgets import QApplication
 
 from keeptray.api.keep_client import KeepClient
@@ -29,14 +29,11 @@ _PALETTE_RGB = [
 
 _NSTrackingMouseEnteredAndExited = 0x01
 _NSTrackingActiveAlways = 0x80
-_NSEventMaskRightMouseDown = 1 << 3   # = 8
 
 _open_panel_fn = None
 _btn_ref = None
-_nsitem_ref = None
 _default_image = None
 _colored_images: list = []
-_right_click_monitor = None
 
 
 def _build_colored_images():
@@ -52,67 +49,23 @@ def _build_colored_images():
         _colored_images.append(base.imageWithSymbolConfiguration_(cfg))
 
 
-def _show_quit_menu():
-    """트레이 버튼 위치에 Quit 메뉴를 팝업한다."""
-    from AppKit import NSApplication, NSMenu, NSMenuItem
-    menu = NSMenu.alloc().init()
-    menu.setAutoenablesItems_(False)
-    quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-        "Quit keeptray", "terminate:", ""
-    )
-    quit_item.setTarget_(NSApplication.sharedApplication())
-    quit_item.setEnabled_(True)
-    menu.addItem_(quit_item)
-    if _nsitem_ref:
-        _nsitem_ref.popUpStatusItemMenu_(menu)
+class _MenuDelegate(NSObject):
+    """
+    좌클릭: 메뉴를 즉시 취소하고 패널 토글.
+    우클릭 / Ctrl+클릭: Quit 메뉴를 그대로 표시.
+    """
+    def menuWillOpen_(self, menu):
+        from AppKit import NSApplication
+        event = NSApplication.sharedApplication().currentEvent()
+        # NSEventTypeLeftMouseDown = 1
+        if event and int(event.type()) == 1:
+            menu.cancelTrackingWithoutAnimation()
+            if _open_panel_fn:
+                QTimer.singleShot(0, _open_panel_fn)
 
 
-def _setup_right_click_monitor():
-    """글로벌 우클릭 이벤트 모니터 — 트레이 버튼 위에서 우클릭 시 Quit 메뉴."""
-    global _right_click_monitor
-    from AppKit import NSEvent, NSScreen
-
-    def _handler(event):
-        if _btn_ref is None:
-            return
-        btn_window = _btn_ref.window()
-        if btn_window is None:
-            return
-
-        # 버튼의 AppKit 스크린 좌표 (좌하단 기준)
-        btn_rect = btn_window.convertRectToScreen_(
-            _btn_ref.convertRect_toView_(_btn_ref.bounds(), None)
-        )
-
-        # CGEvent 위치: Quartz 좌표 (주화면 좌상단 기준) → AppKit 좌표로 변환
-        try:
-            import Quartz
-            cg_loc = Quartz.CGEventGetLocation(event.CGEvent())
-        except Exception:
-            return
-        primary_h = NSScreen.screens()[0].frame().size.height
-        click_x = cg_loc.x
-        click_y = primary_h - cg_loc.y
-
-        bx = btn_rect.origin.x
-        by = btn_rect.origin.y
-        bw = btn_rect.size.width
-        bh = btn_rect.size.height
-
-        if bx <= click_x <= bx + bw and by <= click_y <= by + bh:
-            _show_quit_menu()
-
-    _right_click_monitor = NSEvent.addGlobalMonitorForEventsMatchingMask_handler_(
-        _NSEventMaskRightMouseDown, _handler
-    )
-    logger.info("우클릭 글로벌 모니터 등록 완료")
-
-
-class _ClickTarget(NSObject):
-    def openPanel_(self, sender):
-        if _open_panel_fn:
-            _open_panel_fn()
-
+class _HoverTarget(NSObject):
+    """트래킹 영역 호버 색상 처리 전용."""
     def mouseEntered_(self, event):
         if _btn_ref is not None and _colored_images:
             _btn_ref.setImage_(random.choice(_colored_images))
@@ -135,19 +88,19 @@ class TrayApp(rumps.App):
 
         self._panel = MainPanel(self._client, quit_callback=self._quit_from_panel)
 
-    # ── 직접 클릭 + 호버 색상 설정 ────────────────────────────
+    # ── 클릭 + 호버 색상 설정 ─────────────────────────────────
 
     @rumps.timer(0.3)
     def _setup_direct_click(self, _):
         if self._click_setup_done:
             return
         self._click_setup_done = True
-        global _open_panel_fn, _btn_ref, _nsitem_ref
+        global _open_panel_fn, _btn_ref
         try:
+            from AppKit import NSApplication, NSMenu, NSMenuItem
+
             _open_panel_fn = self._panel.toggle_visibility
             nsitem = self._nsapp.nsstatusitem
-            _nsitem_ref = nsitem
-            nsitem.setMenu_(None)
             btn = nsitem.button()
             _btn_ref = btn
 
@@ -156,21 +109,32 @@ class TrayApp(rumps.App):
                 btn.setImage_(_default_image)
                 btn.setTitle_("")
 
-            self._click_target = _ClickTarget.alloc().init()
-            btn.setTarget_(self._click_target)
-            btn.setAction_("openPanel:")
+            # Quit 메뉴 생성
+            menu = NSMenu.alloc().init()
+            menu.setAutoenablesItems_(False)
+            quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Quit keeptray", "terminate:", ""
+            )
+            quit_item.setTarget_(NSApplication.sharedApplication())
+            quit_item.setEnabled_(True)
+            menu.addItem_(quit_item)
 
+            # 좌클릭은 패널 토글, 우클릭/Ctrl+클릭은 메뉴 표시
+            self._menu_delegate = _MenuDelegate.alloc().init()
+            menu.setDelegate_(self._menu_delegate)
+            nsitem.setMenu_(menu)
+
+            # 호버 색상용 트래킹 영역
+            self._hover_target = _HoverTarget.alloc().init()
             tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
                 btn.bounds(),
                 _NSTrackingMouseEnteredAndExited | _NSTrackingActiveAlways,
-                self._click_target,
+                self._hover_target,
                 None,
             )
             btn.addTrackingArea_(tracking_area)
 
-            _setup_right_click_monitor()
-
-            logger.info("트레이 클릭 + 호버 색상 설정 완료 (색상 수: %d)", len(_colored_images))
+            logger.info("트레이 설정 완료 (색상 수: %d)", len(_colored_images))
             self._panel.show_near_menubar()
         except Exception as e:
             logger.warning("설정 실패: %s", e, exc_info=True)
