@@ -268,3 +268,27 @@ msgstr "자동시작"
 
 msgid "Quit keeptray"
 msgstr "keeptray 종료"
+
+msgid "Labels"
+msgstr "라벨"
+
+msgid "Label Management…"
+msgstr "라벨 관리…"
+
+msgid "Label Management"
+msgstr "라벨 관리"
+
+msgid "Delete Label"
+msgstr "라벨 삭제"
+
+msgid "Delete this label?"
+msgstr "이 라벨을 삭제할까요?"
+
+msgid "New label name…"
+msgstr "새 라벨 이름…"
+
+msgid "No labels"
+msgstr "라벨 없음"
+
+msgid "Add"
+msgstr "추가"

@@ -268,3 +268,27 @@ msgstr "自動起動"
 
 msgid "Quit keeptray"
 msgstr "keeptray を終了"
+
+msgid "Labels"
+msgstr "ラベル"
+
+msgid "Label Management…"
+msgstr "ラベル管理…"
+
+msgid "Label Management"
+msgstr "ラベル管理"
+
+msgid "Delete Label"
+msgstr "ラベルを削除"
+
+msgid "Delete this label?"
+msgstr "このラベルを削除しますか？"
+
+msgid "New label name…"
+msgstr "新しいラベル名…"
+
+msgid "No labels"
+msgstr "ラベルなし"
+
+msgid "Add"
+msgstr "追加"

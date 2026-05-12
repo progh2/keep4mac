@@ -268,3 +268,27 @@ msgstr ""
 
 msgid "Quit keeptray"
 msgstr ""
+
+msgid "Labels"
+msgstr ""
+
+msgid "Label Management…"
+msgstr ""
+
+msgid "Label Management"
+msgstr ""
+
+msgid "Delete Label"
+msgstr ""
+
+msgid "Delete this label?"
+msgstr ""
+
+msgid "New label name…"
+msgstr ""
+
+msgid "No labels"
+msgstr ""
+
+msgid "Add"
+msgstr ""

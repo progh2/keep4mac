@@ -135,6 +135,7 @@ class MainPanel(QWidget):
         self._sidebar.archive_requested.connect(self._on_archive)
         self._sidebar.trash_requested.connect(self._on_trash)
         self._sidebar.label_selected.connect(self._on_label_selected)
+        self._sidebar.label_manager_requested.connect(self._on_label_manager)
         self._sidebar.hide()
         row.addWidget(self._sidebar)
 
@@ -289,6 +290,16 @@ class MainPanel(QWidget):
 
     def _on_label_selected(self, label_id: str):
         self._notes_w.filter_by_label(label_id)
+
+    def _on_label_manager(self):
+        from keeptray.ui.label_manager_dialog import LabelManagerDialog
+        if hasattr(self, "_label_mgr_dlg") and self._label_mgr_dlg.isVisible():
+            self._label_mgr_dlg.raise_()
+            self._label_mgr_dlg.activateWindow()
+            return
+        self._label_mgr_dlg = LabelManagerDialog(self._client, self)
+        self._label_mgr_dlg.labels_changed.connect(self._refresh_labels)
+        self._label_mgr_dlg.show()
 
     def _on_archive(self):
         self._sidebar.clear_label_selection()

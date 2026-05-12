@@ -389,6 +389,44 @@ class KeepClient:
         except Exception:
             return []
 
+    def add_label_to_note(self, note_id: str, label_id: str) -> None:
+        note = self._keep.get(note_id)
+        label = self._keep.getLabel(label_id)
+        if note and label:
+            note.labels.add(label)
+            self._keep.sync()
+
+    def remove_label_from_note(self, note_id: str, label_id: str) -> None:
+        note = self._keep.get(note_id)
+        label = self._keep.getLabel(label_id)
+        if note and label:
+            note.labels.remove(label)
+            self._keep.sync()
+
+    def create_label(self, name: str) -> dict | None:
+        try:
+            label = self._keep.createLabel(name.strip())
+            self._keep.sync()
+            return {"id": label.id, "name": label.name}
+        except Exception:
+            return None
+
+    def rename_label(self, label_id: str, new_name: str) -> bool:
+        label = self._keep.getLabel(label_id)
+        if not label:
+            return False
+        label.name = new_name.strip()
+        self._keep.sync()
+        return True
+
+    def delete_label(self, label_id: str) -> bool:
+        try:
+            self._keep.deleteLabel(label_id)
+            self._keep.sync()
+            return True
+        except Exception:
+            return False
+
     def get_note(self, note_id: str) -> Optional[NoteModel]:
         note = self._keep.get(note_id)
         return _to_model(note) if note else None

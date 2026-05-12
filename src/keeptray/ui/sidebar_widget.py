@@ -72,7 +72,8 @@ class SidebarWidget(QWidget):
     quit_requested = pyqtSignal()
     lang_changed = pyqtSignal(str)
     font_settings_requested = pyqtSignal()
-    label_selected = pyqtSignal(str)   # label_id, 빈 문자열 = 전체
+    label_selected = pyqtSignal(str)          # label_id, 빈 문자열 = 전체
+    label_manager_requested = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -229,6 +230,9 @@ class SidebarWidget(QWidget):
 
         font_act = menu.addAction(f"🔤  {_('Font Settings…')}")
         font_act.triggered.connect(lambda: self.font_settings_requested.emit())
+
+        label_act = menu.addAction(f"🏷  {_('Label Management…')}")
+        label_act.triggered.connect(lambda: self.label_manager_requested.emit())
 
         menu.addSeparator()
 

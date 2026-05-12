@@ -538,6 +538,21 @@ class NoteEditorWidget(QWidget):
         self._copy_btn.clicked.connect(self._on_copy_to_clipboard)
         fl.addWidget(self._copy_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        self._label_btn = QPushButton("🏷")
+        self._label_btn.setFixedSize(32, 32)
+        self._label_btn.setToolTip(_("Labels"))
+        self._label_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
+        """)
+        self._label_btn.clicked.connect(self._on_label_click)
+        self._label_btn.hide()
+        fl.addWidget(self._label_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         fl.addStretch()
         self._refresh_palette()
         self._refresh_pin_btn()
@@ -602,6 +617,7 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.setToolTip(_("Delete"))
         self._archive_btn.setToolTip(_("Archive"))
         self._copy_btn.setToolTip(_("Copy to clipboard"))
+        self._label_btn.setToolTip(_("Labels"))
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._export_btn.setToolTip(_("Export / Share"))
         self._revert_btn.setToolTip(_("Revert"))
@@ -620,6 +636,7 @@ class NoteEditorWidget(QWidget):
         self._header_label.setText(_("Edit Note"))
         self._delete_btn.show()
         self._archive_btn.show()
+        self._label_btn.show()
         self._populate(note)
         self._orig_title, self._orig_body = self._note_content()
         self._update_revert_btn()
@@ -632,6 +649,7 @@ class NoteEditorWidget(QWidget):
         self._header_label.setText(_("New Note"))
         self._delete_btn.hide()
         self._archive_btn.hide()
+        self._label_btn.hide()
         self._title_edit.clear()
         self._body_edit.clear()
         self._body_edit.show()
@@ -876,6 +894,39 @@ class NoteEditorWidget(QWidget):
         if self._note_id:
             self._client.delete_note(self._note_id)
         self.back_requested.emit()
+
+    def _on_label_click(self):
+        if not self._note_id:
+            return
+        all_labels = self._client.get_labels()
+        if not all_labels:
+            return
+        note = self._client.get_note(self._note_id)
+        current_ids = set(note.label_ids if note else [])
+
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background: white; border: 1px solid #d1d1d6;
+                border-radius: 8px; padding: 4px; font-size: 13px;
+            }
+            QMenu::item { padding: 6px 16px; border-radius: 4px; }
+            QMenu::item:selected { background: #f2f2f7; color: #1c1c1e; }
+        """)
+        for lbl in all_labels:
+            prefix = "✓  " if lbl["id"] in current_ids else "    "
+            act = menu.addAction(f"{prefix}{lbl['name']}")
+            act.setData(lbl["id"])
+
+        pos = self._label_btn.mapToGlobal(self._label_btn.rect().topLeft())
+        chosen = menu.exec(pos)
+        if not chosen or not chosen.data():
+            return
+        lid = chosen.data()
+        if lid in current_ids:
+            self._client.remove_label_from_note(self._note_id, lid)
+        else:
+            self._client.add_label_to_note(self._note_id, lid)
 
     def _on_archive(self):
         if self._note_id:
