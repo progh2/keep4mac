@@ -36,6 +36,18 @@ class _IMETextEdit(QTextEdit):
         QGuiApplication.inputMethod().reset()
 
 
+# 번역 대상 언어 목록 — UI 언어 설정과 독립적으로 항상 전체 노출
+_TRANSLATE_LANGS: dict[str, str] = {
+    "ko": "한국어",
+    "en": "English",
+    "ja": "日本語",
+    "zh": "中文",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+}
+
+
 class _TranslateThread(QThread):
     """MyMemory 무료 API를 사용해 제목·본문을 백그라운드 번역한다."""
     done = pyqtSignal(str, str)   # (translated_title, translated_content)
@@ -43,11 +55,10 @@ class _TranslateThread(QThread):
 
     _API = "https://api.mymemory.translated.net/get"
 
-    def __init__(self, title: str, content: str, source: str, target: str):
+    def __init__(self, title: str, content: str, target: str):
         super().__init__()
         self._title = title
         self._content = content
-        self._source = source
         self._target = target
 
     def _call(self, text: str) -> str:
@@ -55,7 +66,7 @@ class _TranslateThread(QThread):
             return text
         resp = _req.get(
             self._API,
-            params={"q": text[:2000], "langpair": f"{self._source}|{self._target}"},
+            params={"q": text[:2000], "langpair": f"auto|{self._target}"},
             timeout=12,
         )
         resp.raise_for_status()
@@ -1062,13 +1073,11 @@ class NoteEditorWidget(QWidget):
 
         translate_menu = menu.addMenu(f"🌐  {_('Translate & New Note')}")
         translate_menu.setStyleSheet(menu.styleSheet())
-        current_lang = i18n.current_lang()
-        for code, name in i18n.SUPPORTED_LANGS.items():
-            if code != current_lang:
-                act = translate_menu.addAction(f"→ {name}")
-                act.triggered.connect(
-                    lambda checked=False, c=code: self._on_translate(c)
-                )
+        for code, name in _TRANSLATE_LANGS.items():
+            act = translate_menu.addAction(f"→ {name}")
+            act.triggered.connect(
+                lambda checked=False, c=code: self._on_translate(c)
+            )
         if self._is_new:
             translate_menu.setEnabled(False)
 
@@ -1272,10 +1281,9 @@ class NoteEditorWidget(QWidget):
 
     def _on_translate(self, target_lang: str):
         title, content = self._note_content()
-        source = i18n.current_lang()
         self._export_btn.setEnabled(False)
         self._show_export_toast(f"⏳  {_('Translating…')}")
-        self._translate_thread = _TranslateThread(title, content, source, target_lang)
+        self._translate_thread = _TranslateThread(title, content, target_lang)
         self._translate_thread.done.connect(
             lambda t, c: self._on_translate_done(t, c, target_lang)
         )
