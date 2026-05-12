@@ -60,7 +60,7 @@ class _MenuDelegate(NSObject):
         from keeptray.i18n import gettext as _
         # 매번 현재 언어로 타이틀 갱신
         if _quit_item_ref is not None:
-            _quit_item_ref.setTitle_(f"{_('Quit')} keeptray")
+            _quit_item_ref.setTitle_(_("Quit keeptray"))
         event = NSApplication.sharedApplication().currentEvent()
         # NSEventTypeLeftMouseDown = 1
         if event and int(event.type()) == 1:
@@ -119,7 +119,7 @@ class TrayApp(rumps.App):
             menu = NSMenu.alloc().init()
             menu.setAutoenablesItems_(False)
             quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-                f"{_('Quit')} keeptray", "terminate:", ""
+                _("Quit keeptray"), "terminate:", ""
             )
             quit_item.setTarget_(NSApplication.sharedApplication())
             quit_item.setEnabled_(True)

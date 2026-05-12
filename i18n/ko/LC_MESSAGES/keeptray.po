@@ -265,3 +265,6 @@ msgstr "이 플랫폼용 파일이 없습니다"
 
 msgid "Autostart"
 msgstr "자동시작"
+
+msgid "Quit keeptray"
+msgstr "keeptray 종료"

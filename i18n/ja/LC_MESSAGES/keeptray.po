@@ -265,3 +265,6 @@ msgstr "このプラットフォーム用のファイルがありません"
 
 msgid "Autostart"
 msgstr "自動起動"
+
+msgid "Quit keeptray"
+msgstr "keeptray を終了"

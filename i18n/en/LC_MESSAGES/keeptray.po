@@ -265,3 +265,6 @@ msgstr ""
 
 msgid "Autostart"
 msgstr ""
+
+msgid "Quit keeptray"
+msgstr ""
