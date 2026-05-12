@@ -308,6 +308,7 @@ class _ImageThread(QThread):
 
 class NoteEditorWidget(QWidget):
     back_requested = pyqtSignal()
+    label_changed = pyqtSignal(str, list)   # (note_id, new_label_ids)
 
     def __init__(self, client: KeepClient):
         super().__init__()
@@ -927,6 +928,9 @@ class NoteEditorWidget(QWidget):
             self._client.remove_label_from_note(self._note_id, lid)
         else:
             self._client.add_label_to_note(self._note_id, lid)
+        updated_note = self._client.get_note(self._note_id)
+        new_ids = updated_note.label_ids if updated_note else []
+        self.label_changed.emit(self._note_id, new_ids)
 
     def _on_archive(self):
         if self._note_id:

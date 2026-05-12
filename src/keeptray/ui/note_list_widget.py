@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 from datetime import timezone
 
@@ -213,6 +214,14 @@ class NoteListWidget(QWidget):
     def filter_by_label(self, label_id: str):
         """라벨 필터를 설정하고 현재 노트 목록을 다시 렌더링한다."""
         self._filter_label_id = label_id
+        self._apply_filters()
+
+    def update_note_labels(self, note_id: str, label_ids: list[str]):
+        """노트 편집기에서 라벨 변경 시 즉시 _all_notes를 갱신하고 필터를 재적용한다."""
+        self._all_notes = [
+            dataclasses.replace(n, label_ids=label_ids) if n.id == note_id else n
+            for n in self._all_notes
+        ]
         self._apply_filters()
 
     def _apply_filters(self):

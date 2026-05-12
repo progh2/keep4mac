@@ -156,7 +156,7 @@ class SpecialNotesWidget(QWidget):
         outer.setStyleSheet(f"""
             QFrame {{
                 background: {note.color_hex};
-                border: 1px solid rgba(0,0,0,0.10);
+                border: none;
                 border-radius: 10px;
             }}
         """)
