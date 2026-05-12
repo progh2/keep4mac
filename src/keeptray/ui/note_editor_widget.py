@@ -310,7 +310,8 @@ class _ImageThread(QThread):
 
 class NoteEditorWidget(QWidget):
     back_requested = pyqtSignal()
-    label_changed = pyqtSignal(str, list)   # (note_id, new_label_ids)
+    label_changed = pyqtSignal(str, list)      # (note_id, new_label_ids)
+    color_changed = pyqtSignal(str, object)    # (note_id, NoteColor)
 
     def __init__(self, client: KeepClient):
         super().__init__()
@@ -326,6 +327,7 @@ class NoteEditorWidget(QWidget):
         self._translate_thread: _TranslateThread | None = None
         self._orig_title: str = ""
         self._orig_body: str = ""
+        self._orig_color: NoteColor = NoteColor.DEFAULT
         self._revert_btn: QPushButton | None = None
         self._build_ui()
         self.apply_fonts()
@@ -642,6 +644,7 @@ class NoteEditorWidget(QWidget):
         self._label_btn.show()
         self._populate(note)
         self._orig_title, self._orig_body = self._note_content()
+        self._orig_color = self._current_color
         self._update_revert_btn()
 
     def set_body_text(self, text: str):
@@ -669,6 +672,7 @@ class NoteEditorWidget(QWidget):
         self._refresh_pin_btn()
         self._orig_title = ""
         self._orig_body = ""
+        self._orig_color = NoteColor.DEFAULT
         self._update_revert_btn()
         self._title_edit.setFocus()
 
@@ -771,7 +775,8 @@ class NoteEditorWidget(QWidget):
 
     def _has_unsaved_changes(self) -> bool:
         title, body = self._note_content()
-        return title != self._orig_title or body != self._orig_body
+        return (title != self._orig_title or body != self._orig_body
+                or self._current_color != self._orig_color)
 
     def _update_revert_btn(self, *_):
         if self._revert_btn:
@@ -809,7 +814,10 @@ class NoteEditorWidget(QWidget):
                 self._client.update_note(self._note_id, title, body, color)
 
         self._orig_title, self._orig_body = self._note_content()
+        self._orig_color = self._current_color
         self._update_revert_btn()
+        if self._note_id:
+            self.color_changed.emit(self._note_id, self._current_color)
         return True
 
     def auto_save_if_needed(self):

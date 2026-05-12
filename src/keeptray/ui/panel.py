@@ -168,6 +168,7 @@ class MainPanel(QWidget):
         self._editor_w = NoteEditorWidget(self._client)
         self._editor_w.back_requested.connect(self._on_editor_back)
         self._editor_w.label_changed.connect(self._notes_w.update_note_labels)
+        self._editor_w.color_changed.connect(self._notes_w.update_note_color)
 
         self._archive_w = SpecialNotesWidget(self._client, "archive")
         self._archive_w.back_requested.connect(self._show_notes)

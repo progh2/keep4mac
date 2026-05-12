@@ -306,6 +306,14 @@ class NoteListWidget(QWidget):
             """)
         self._apply_filters()
 
+    def update_note_color(self, note_id: str, color):
+        """노트 편집기에서 색상 변경 시 즉시 _all_notes를 갱신하고 필터를 재적용한다."""
+        self._all_notes = [
+            dataclasses.replace(n, color=color) if n.id == note_id else n
+            for n in self._all_notes
+        ]
+        self._apply_filters()
+
     def update_note_labels(self, note_id: str, label_ids: list[str]):
         """노트 편집기에서 라벨 변경 시 즉시 _all_notes를 갱신하고 필터를 재적용한다."""
         self._all_notes = [
