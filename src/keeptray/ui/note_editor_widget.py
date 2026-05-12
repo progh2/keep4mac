@@ -510,6 +510,20 @@ class NoteEditorWidget(QWidget):
         self._delete_btn.clicked.connect(self._on_delete)
         fl.addWidget(self._delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        self._archive_btn = QPushButton("📦")
+        self._archive_btn.setFixedSize(32, 32)
+        self._archive_btn.setToolTip(_("Archive"))
+        self._archive_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
+        """)
+        self._archive_btn.clicked.connect(self._on_archive)
+        fl.addWidget(self._archive_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         self._copy_btn = QPushButton("📋")
         self._copy_btn.setFixedSize(32, 32)
         self._copy_btn.setToolTip(_("Copy to clipboard"))
@@ -586,6 +600,7 @@ class NoteEditorWidget(QWidget):
         self._title_edit.setPlaceholderText(_("Title"))
         self._body_edit.setPlaceholderText(_("Enter note content…"))
         self._delete_btn.setToolTip(_("Delete"))
+        self._archive_btn.setToolTip(_("Archive"))
         self._copy_btn.setToolTip(_("Copy to clipboard"))
         self._pin_btn.setToolTip(_("Pin / Unpin"))
         self._export_btn.setToolTip(_("Export / Share"))
@@ -604,6 +619,7 @@ class NoteEditorWidget(QWidget):
         self._is_new = False
         self._header_label.setText(_("Edit Note"))
         self._delete_btn.show()
+        self._archive_btn.show()
         self._populate(note)
         self._orig_title, self._orig_body = self._note_content()
         self._update_revert_btn()
@@ -615,6 +631,7 @@ class NoteEditorWidget(QWidget):
         self._is_pinned = False
         self._header_label.setText(_("New Note"))
         self._delete_btn.hide()
+        self._archive_btn.hide()
         self._title_edit.clear()
         self._body_edit.clear()
         self._body_edit.show()
@@ -858,6 +875,12 @@ class NoteEditorWidget(QWidget):
             return
         if self._note_id:
             self._client.delete_note(self._note_id)
+        self.back_requested.emit()
+
+    def _on_archive(self):
+        if self._note_id:
+            self.auto_save_if_needed()
+            self._client.archive_note(self._note_id)
         self.back_requested.emit()
 
     def _on_delete_image(self):
