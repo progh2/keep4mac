@@ -495,6 +495,20 @@ class NoteEditorWidget(QWidget):
         self._pin_btn.clicked.connect(self._on_pin_toggle)
         fl.addWidget(self._pin_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        self._archive_btn = QPushButton("📦")
+        self._archive_btn.setFixedSize(32, 32)
+        self._archive_btn.setToolTip(_("Archive"))
+        self._archive_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent; color: #636366;
+                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
+            }
+            QPushButton:hover { background: #f2f2f7; }
+            QPushButton:pressed { background: #e5e5ea; }
+        """)
+        self._archive_btn.clicked.connect(self._on_archive)
+        fl.addWidget(self._archive_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+
         self._delete_btn = QPushButton("✕")
         self._delete_btn.setFixedSize(32, 32)
         self._delete_btn.setToolTip(_("Delete"))
@@ -509,20 +523,6 @@ class NoteEditorWidget(QWidget):
         """)
         self._delete_btn.clicked.connect(self._on_delete)
         fl.addWidget(self._delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        self._archive_btn = QPushButton("📦")
-        self._archive_btn.setFixedSize(32, 32)
-        self._archive_btn.setToolTip(_("Archive"))
-        self._archive_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent; color: #636366;
-                border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px;
-            }
-            QPushButton:hover { background: #f2f2f7; }
-            QPushButton:pressed { background: #e5e5ea; }
-        """)
-        self._archive_btn.clicked.connect(self._on_archive)
-        fl.addWidget(self._archive_btn, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self._copy_btn = QPushButton("📋")
         self._copy_btn.setFixedSize(32, 32)
