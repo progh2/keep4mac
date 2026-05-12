@@ -1,7 +1,10 @@
 import unicodedata
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QMenu, QPushButton, QSizePolicy, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QFrame, QMenu, QPushButton, QScrollArea,
+    QSizePolicy, QVBoxLayout, QWidget,
+)
 
 from keeptray.core import autostart
 import keeptray.i18n as i18n
@@ -24,6 +27,19 @@ _BTN_CSS = """
         background: #e5e5ea;
         color: #1c1c1e;
     }}
+"""
+
+_BTN_ACTIVE_CSS = """
+    QPushButton {{
+        background: #e8f0fe;
+        border: none;
+        color: #1a73e8;
+        font-size: 10px;
+        padding: 4px 2px;
+        border-radius: 6px;
+    }}
+    QPushButton:hover {{ background: #d2e3fc; color: #1a73e8; }}
+    QPushButton:pressed {{ background: #c5d9f9; }}
 """
 
 _MENU_CSS = """
@@ -54,13 +70,16 @@ class SidebarWidget(QWidget):
     about_requested = pyqtSignal()
     logout_requested = pyqtSignal()
     quit_requested = pyqtSignal()
-    lang_changed = pyqtSignal(str)  # lang code
+    lang_changed = pyqtSignal(str)
     font_settings_requested = pyqtSignal()
+    label_selected = pyqtSignal(str)   # label_id, 빈 문자열 = 전체
 
     def __init__(self):
         super().__init__()
         self.setFixedWidth(56)
         self.setStyleSheet("background: transparent;")
+        self._active_label: str = ""
+        self._label_btns: dict[str, QPushButton] = {}
         self._build_ui()
 
     def _build_ui(self):
@@ -69,24 +88,110 @@ class SidebarWidget(QWidget):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
-        self._sync_btn      = self._make_btn("🔄", _("Sync"),     self.sync_requested)
+        self._new_note_btn = self._make_btn("🗒", _("New Note"), self.new_note_requested)
+        self._sync_btn     = self._make_btn("🔄", _("Sync"),     self.sync_requested)
+        layout.addWidget(self._new_note_btn)
+        layout.addWidget(self._sync_btn)
 
-        for btn in (self._new_note_btn, self._sync_btn):
-            layout.addWidget(btn)
+        # ── 구분선 ──────────────────────────────────────
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background: #e5e5ea; margin: 4px 6px;")
+        layout.addWidget(sep)
 
-        layout.addStretch()
+        # ── 라벨 스크롤 영역 ────────────────────────────
+        self._label_scroll = QScrollArea()
+        self._label_scroll.setWidgetResizable(True)
+        self._label_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._label_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._label_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._label_scroll.setStyleSheet("""
+            QScrollArea { background: transparent; }
+            QScrollBar:vertical {
+                width: 4px; background: transparent;
+            }
+            QScrollBar::handle:vertical {
+                background: #c7c7cc; border-radius: 2px; min-height: 20px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
+        self._label_scroll.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding
+        )
+        self._label_scroll.setFixedWidth(56)
 
-        self._archive_btn   = self._make_btn("📦", _("Archive"),   self.archive_requested)
-        self._trash_btn     = self._make_btn("🗑", _("Trash"),     self.trash_requested)
-        self._settings_btn  = self._make_btn("⚙️", _("Settings"), None)
+        self._label_container = QWidget()
+        self._label_container.setStyleSheet("background: transparent;")
+        self._label_layout = QVBoxLayout(self._label_container)
+        self._label_layout.setContentsMargins(0, 0, 0, 0)
+        self._label_layout.setSpacing(2)
+        self._label_layout.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
+        self._label_scroll.setWidget(self._label_container)
+        layout.addWidget(self._label_scroll, 1)   # stretch=1 → 여유 공간 차지
+
+        # ── 고정 하단 버튼 ──────────────────────────────
+        self._archive_btn  = self._make_btn("📦", _("Archive"),  self.archive_requested)
+        self._trash_btn    = self._make_btn("🗑",  _("Trash"),    self.trash_requested)
+        self._settings_btn = self._make_btn("⚙️", _("Settings"), None)
         self._settings_btn.clicked.connect(self._on_settings_click)
 
         for btn in (self._archive_btn, self._trash_btn, self._settings_btn):
             layout.addWidget(btn)
 
+    # ── 라벨 목록 갱신 ────────────────────────────────────────
+
+    def set_labels(self, labels: list[dict]):
+        """동기화 후 라벨 목록을 갱신한다."""
+        # 기존 버튼 제거
+        while self._label_layout.count():
+            item = self._label_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self._label_btns.clear()
+
+        for lbl in labels:
+            btn = self._make_label_btn(lbl["id"], lbl["name"])
+            self._label_layout.addWidget(btn)
+            self._label_btns[lbl["id"]] = btn
+
+        # 선택 상태 유지 또는 초기화
+        if self._active_label not in self._label_btns:
+            self._active_label = ""
+        self._refresh_label_styles()
+
+    def clear_label_selection(self):
+        self._active_label = ""
+        self._refresh_label_styles()
+
+    def _make_label_btn(self, label_id: str, name: str) -> QPushButton:
+        btn = QPushButton(f"🏷\n{self._wrap_label(name)}")
+        btn.setFixedWidth(52)
+        btn.setMinimumHeight(44)
+        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        btn.setStyleSheet(_BTN_CSS)
+        btn.clicked.connect(lambda: self._on_label_click(label_id))
+        return btn
+
+    def _on_label_click(self, label_id: str):
+        if self._active_label == label_id:
+            self._active_label = ""   # 재클릭 시 해제
+        else:
+            self._active_label = label_id
+        self._refresh_label_styles()
+        self.label_selected.emit(self._active_label)
+
+    def _refresh_label_styles(self):
+        for lid, btn in self._label_btns.items():
+            btn.setStyleSheet(
+                _BTN_ACTIVE_CSS if lid == self._active_label else _BTN_CSS
+            )
+
+    # ── retranslate ───────────────────────────────────────────
+
     def retranslate_ui(self):
-        """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""
         self._new_note_btn.setText(f"🗒\n{self._wrap_label(_('New Note'))}")
         self._sync_btn.setText(f"🔄\n{self._wrap_label(_('Sync'))}")
         self._archive_btn.setText(f"📦\n{self._wrap_label(_('Archive'))}")
@@ -99,11 +204,9 @@ class SidebarWidget(QWidget):
         menu = QMenu(self)
         menu.setStyleSheet(_MENU_CSS)
 
-        # 웹 Keep
         web_act = menu.addAction(f"🌐  {_('Web Keep')}")
         web_act.triggered.connect(lambda: self.open_web_requested.emit())
 
-        # 자동시작 토글
         autostart_act = menu.addAction(f"🚀  {_('Autostart')}")
         autostart_act.setCheckable(True)
         autostart_act.setChecked(autostart.is_enabled())
@@ -111,7 +214,6 @@ class SidebarWidget(QWidget):
 
         menu.addSeparator()
 
-        # 언어 변경 서브메뉴
         lang_menu = menu.addMenu(f"🌏  {_('Language')}")
         lang_menu.setStyleSheet(_MENU_CSS)
         current = i18n.current_lang()
@@ -125,13 +227,11 @@ class SidebarWidget(QWidget):
                     lambda checked=False, c=code: self._on_lang_select(c)
                 )
 
-        # 폰트 설정
         font_act = menu.addAction(f"🔤  {_('Font Settings…')}")
         font_act.triggered.connect(lambda: self.font_settings_requested.emit())
 
         menu.addSeparator()
 
-        # 내 메일 주소
         from keeptray.core import settings as _settings
         my_email = _settings.get_my_email()
         email_label = f"✉  {_('My Email')}  ({my_email})" if my_email else f"✉  {_('My Email')}"
@@ -140,17 +240,14 @@ class SidebarWidget(QWidget):
 
         menu.addSeparator()
 
-        # 정보
         about_act = menu.addAction(f"ℹ️  {_('About')}")
         about_act.triggered.connect(lambda: self.about_requested.emit())
 
-        # 로그아웃
         logout_act = menu.addAction(f"🚪  {_('Logout')}")
         logout_act.triggered.connect(lambda: self.logout_requested.emit())
 
         menu.addSeparator()
 
-        # 종료
         quit_act = menu.addAction(f"✖️  {_('Quit')}")
         quit_act.triggered.connect(lambda: self.quit_requested.emit())
 
@@ -167,7 +264,6 @@ class SidebarWidget(QWidget):
         from keeptray.core import settings as _settings
 
         current = _settings.get_my_email()
-
         dlg = QDialog()
         dlg.setWindowTitle(_("My Email"))
         dlg.setFixedWidth(320)
@@ -184,12 +280,9 @@ class SidebarWidget(QWidget):
         edit = QLineEdit(current or "")
         edit.setStyleSheet("""
             QLineEdit {
-                background: #f2f2f7;
-                border: 1px solid #d1d1d6;
-                border-radius: 6px;
-                padding: 6px 10px;
-                font-size: 13px;
-                color: #1c1c1e;
+                background: #f2f2f7; border: 1px solid #d1d1d6;
+                border-radius: 6px; padding: 6px 10px;
+                font-size: 13px; color: #1c1c1e;
             }
             QLineEdit:focus { border-color: #007AFF; background: #fff; }
         """)
@@ -214,12 +307,9 @@ class SidebarWidget(QWidget):
 
     @staticmethod
     def _wrap_label(label: str) -> str:
-        """52px 사이드바 버튼에 맞게 라벨 텍스트를 자동 줄바꿈한다.
-        macOS 10px 폰트 실측 기준: CJK ≈ 12px, ASCII ≈ 7px."""
         def char_px(c: str) -> int:
             return 12 if unicodedata.east_asian_width(c) in ('W', 'F') else 7
-
-        MAX_PX = 48  # 52px 버튼 - 좌우 패딩 4px = 콘텐츠 48px
+        MAX_PX = 48
         total_px = sum(char_px(c) for c in label)
         if total_px <= MAX_PX:
             return label

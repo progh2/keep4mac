@@ -105,6 +105,10 @@ def _to_model(note) -> NoteModel:
     ts = getattr(note, "timestamps", None)
     updated = (ts.updated if ts and ts.updated else None)
     created = (ts.created if ts and ts.created else None)
+    try:
+        label_ids = [lbl.id for lbl in note.labels.all()]
+    except Exception:
+        label_ids = []
 
     if isinstance(note, gkeepapi.node.List):
         items = [
@@ -123,6 +127,7 @@ def _to_model(note) -> NoteModel:
             image_url=image_url,
             updated=updated,
             created=created,
+            label_ids=label_ids,
         )
 
     return NoteModel(
@@ -135,6 +140,7 @@ def _to_model(note) -> NoteModel:
         image_url=image_url,
         updated=updated,
         created=created,
+        label_ids=label_ids,
     )
 
 
@@ -153,6 +159,7 @@ def _note_to_dict(n: "NoteModel") -> dict:
         "image_url": n.image_url,
         "updated": n.updated.isoformat() if n.updated else None,
         "created": n.created.isoformat() if n.created else None,
+        "label_ids": n.label_ids,
     }
 
 
@@ -172,6 +179,7 @@ def _note_from_dict(d: dict) -> "NoteModel":
         image_url=d.get("image_url"),
         updated=updated,
         created=created,
+        label_ids=d.get("label_ids", []),
     )
 
 
@@ -369,6 +377,17 @@ class KeepClient:
         except Exception as e:
             logger.warning("이미지 다운로드 실패: %s", e)
         return None
+
+    def get_labels(self) -> list[dict]:
+        """삭제되지 않은 라벨 목록을 반환한다: [{"id": ..., "name": ...}]"""
+        try:
+            return [
+                {"id": lbl.id, "name": lbl.name}
+                for lbl in self._keep.labels()
+                if not lbl.deleted
+            ]
+        except Exception:
+            return []
 
     def get_note(self, note_id: str) -> Optional[NoteModel]:
         note = self._keep.get(note_id)

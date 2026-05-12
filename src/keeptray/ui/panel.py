@@ -134,6 +134,7 @@ class MainPanel(QWidget):
         self._sidebar.font_settings_requested.connect(self._on_font_settings)
         self._sidebar.archive_requested.connect(self._on_archive)
         self._sidebar.trash_requested.connect(self._on_trash)
+        self._sidebar.label_selected.connect(self._on_label_selected)
         self._sidebar.hide()
         row.addWidget(self._sidebar)
 
@@ -147,6 +148,8 @@ class MainPanel(QWidget):
 
         self._notes_w = NoteListWidget(self._client)
         self._notes_w.note_selected.connect(self._on_note_selected)
+
+        self._notes_w.sync_done.connect(self._refresh_labels)
 
         self._editor_w = NoteEditorWidget(self._client)
         self._editor_w.back_requested.connect(self._on_editor_back)
@@ -280,11 +283,22 @@ class MainPanel(QWidget):
         self._sidebar.hide()
         self._stack.setCurrentIndex(_IDX_LOGIN)
 
+    def _refresh_labels(self):
+        labels = self._client.get_labels()
+        self._sidebar.set_labels(labels)
+
+    def _on_label_selected(self, label_id: str):
+        self._notes_w.filter_by_label(label_id)
+
     def _on_archive(self):
+        self._sidebar.clear_label_selection()
+        self._notes_w.filter_by_label("")
         self._stack.setCurrentIndex(_IDX_ARCHIVE)
         self._archive_w.load()
 
     def _on_trash(self):
+        self._sidebar.clear_label_selection()
+        self._notes_w.filter_by_label("")
         self._stack.setCurrentIndex(_IDX_TRASH)
         self._trash_w.load()
 

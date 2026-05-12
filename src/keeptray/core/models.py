@@ -57,6 +57,7 @@ class NoteModel:
     image_url: str | None = None
     updated: datetime | None = None
     created: datetime | None = None
+    label_ids: list[str] = field(default_factory=list)
 
     @property
     def color_hex(self) -> str:

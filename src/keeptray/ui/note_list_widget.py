@@ -38,6 +38,7 @@ class _SyncThread(QThread):
 
 class NoteListWidget(QWidget):
     note_selected = pyqtSignal(str)   # note_id
+    sync_done = pyqtSignal()          # 동기화 완료 (라벨 갱신용)
 
     # 정렬 키 레이블 매핑 (key → 표시 이름 함수)
     _SORT_LABELS: dict[str, str] = {
@@ -53,6 +54,7 @@ class NoteListWidget(QWidget):
         self._sync_thread: _SyncThread | None = None
         self._syncing = False
         self._sort = app_settings.get_sort()
+        self._filter_label_id: str = ""
         self._build_ui()
 
     # ── UI 구성 ───────────────────────────────────────────────
@@ -208,9 +210,25 @@ class NoteListWidget(QWidget):
         self._sync_thread.finished.connect(self._on_sync_finished)
         self._sync_thread.start()
 
+    def filter_by_label(self, label_id: str):
+        """라벨 필터를 설정하고 현재 노트 목록을 다시 렌더링한다."""
+        self._filter_label_id = label_id
+        self._apply_filters()
+
+    def _apply_filters(self):
+        notes = self._all_notes
+        if self._filter_label_id:
+            notes = [n for n in notes if self._filter_label_id in n.label_ids]
+        query = self._search.text()
+        if query:
+            q = query.lower()
+            notes = [n for n in notes if q in n.title.lower() or q in n.text.lower()]
+        self._render(notes)
+
     def _on_sync_done(self, notes: list[NoteModel]):
         self._all_notes = notes
-        self._render(notes)
+        self._apply_filters()
+        self.sync_done.emit()
 
     def _on_sync_error(self, msg: str):
         logger.warning("백그라운드 동기화 실패: %s", msg)
@@ -221,15 +239,7 @@ class NoteListWidget(QWidget):
     # ── 검색 ─────────────────────────────────────────────────
 
     def _filter(self, query: str):
-        if not query:
-            self._render(self._all_notes)
-            return
-        q = query.lower()
-        filtered = [
-            n for n in self._all_notes
-            if q in n.title.lower() or q in n.text.lower()
-        ]
-        self._render(filtered)
+        self._apply_filters()
 
     # ── 렌더링 ────────────────────────────────────────────────
 
