@@ -32,6 +32,7 @@ _NSTrackingActiveAlways = 0x80
 
 _open_panel_fn = None
 _btn_ref = None
+_quit_item_ref = None
 _default_image = None
 _colored_images: list = []
 
@@ -56,6 +57,10 @@ class _MenuDelegate(NSObject):
     """
     def menuWillOpen_(self, menu):
         from AppKit import NSApplication
+        from keeptray.i18n import gettext as _
+        # 매번 현재 언어로 타이틀 갱신
+        if _quit_item_ref is not None:
+            _quit_item_ref.setTitle_(f"{_('Quit')} keeptray")
         event = NSApplication.sharedApplication().currentEvent()
         # NSEventTypeLeftMouseDown = 1
         if event and int(event.type()) == 1:
@@ -95,9 +100,10 @@ class TrayApp(rumps.App):
         if self._click_setup_done:
             return
         self._click_setup_done = True
-        global _open_panel_fn, _btn_ref
+        global _open_panel_fn, _btn_ref, _quit_item_ref
         try:
             from AppKit import NSApplication, NSMenu, NSMenuItem
+            from keeptray.i18n import gettext as _
 
             _open_panel_fn = self._panel.toggle_visibility
             nsitem = self._nsapp.nsstatusitem
@@ -113,11 +119,12 @@ class TrayApp(rumps.App):
             menu = NSMenu.alloc().init()
             menu.setAutoenablesItems_(False)
             quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-                "Quit keeptray", "terminate:", ""
+                f"{_('Quit')} keeptray", "terminate:", ""
             )
             quit_item.setTarget_(NSApplication.sharedApplication())
             quit_item.setEnabled_(True)
             menu.addItem_(quit_item)
+            _quit_item_ref = quit_item
 
             # 좌클릭은 패널 토글, 우클릭/Ctrl+클릭은 메뉴 표시
             self._menu_delegate = _MenuDelegate.alloc().init()
