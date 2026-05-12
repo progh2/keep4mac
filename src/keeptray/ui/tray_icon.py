@@ -32,7 +32,6 @@ _NSTrackingActiveAlways = 0x80
 
 _open_panel_fn = None
 _btn_ref = None
-_nsitem_ref = None
 _default_image = None
 _colored_images: list = []
 
@@ -50,29 +49,9 @@ def _build_colored_images():
         _colored_images.append(base.imageWithSymbolConfiguration_(cfg))
 
 
-def _show_context_menu():
-    """우클릭 시 표시할 컨텍스트 메뉴 (Quit)."""
-    from AppKit import NSApplication, NSMenu, NSMenuItem
-    menu = NSMenu.alloc().init()
-    menu.setAutoenablesItems_(False)
-    quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-        "Quit keeptray", "terminate:", ""
-    )
-    quit_item.setTarget_(NSApplication.sharedApplication())
-    quit_item.setEnabled_(True)
-    menu.addItem_(quit_item)
-    if _nsitem_ref:
-        _nsitem_ref.popUpStatusItemMenu_(menu)
-
-
 class _ClickTarget(NSObject):
     def openPanel_(self, sender):
-        from AppKit import NSApplication
-        event = NSApplication.sharedApplication().currentEvent()
-        # 3 = NSEventTypeRightMouseDown, 4 = NSEventTypeRightMouseUp
-        if event and int(event.type()) in (3, 4):
-            _show_context_menu()
-        elif _open_panel_fn:
+        if _open_panel_fn:
             _open_panel_fn()
 
     def mouseEntered_(self, event):
@@ -104,11 +83,10 @@ class TrayApp(rumps.App):
         if self._click_setup_done:
             return
         self._click_setup_done = True
-        global _open_panel_fn, _btn_ref, _nsitem_ref
+        global _open_panel_fn, _btn_ref
         try:
             _open_panel_fn = self._panel.toggle_visibility
             nsitem = self._nsapp.nsstatusitem
-            _nsitem_ref = nsitem
             nsitem.setMenu_(None)
             btn = nsitem.button()
             _btn_ref = btn
@@ -121,6 +99,19 @@ class TrayApp(rumps.App):
             self._click_target = _ClickTarget.alloc().init()
             btn.setTarget_(self._click_target)
             btn.setAction_("openPanel:")
+
+            # NSView.setMenu_() = 우클릭/Ctrl+클릭 전용 컨텍스트 메뉴
+            # (NSStatusItem.setMenu_()와 다름 — 좌클릭 action을 막지 않음)
+            from AppKit import NSApplication, NSMenu, NSMenuItem
+            ctx_menu = NSMenu.alloc().init()
+            ctx_menu.setAutoenablesItems_(False)
+            quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Quit keeptray", "terminate:", ""
+            )
+            quit_item.setTarget_(NSApplication.sharedApplication())
+            quit_item.setEnabled_(True)
+            ctx_menu.addItem_(quit_item)
+            btn.setMenu_(ctx_menu)
 
             tracking_area = NSTrackingArea.alloc().initWithRect_options_owner_userInfo_(
                 btn.bounds(),
