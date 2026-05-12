@@ -71,17 +71,19 @@ class SidebarWidget(QWidget):
 
         self._new_note_btn  = self._make_btn("🗒", _("New Note"), self.new_note_requested)
         self._sync_btn      = self._make_btn("🔄", _("Sync"),     self.sync_requested)
-        self._archive_btn   = self._make_btn("📦", _("Archive"),   self.archive_requested)
-        self._trash_btn     = self._make_btn("🗑", _("Trash"),     self.trash_requested)
 
-        for btn in (self._new_note_btn, self._sync_btn, self._archive_btn, self._trash_btn):
+        for btn in (self._new_note_btn, self._sync_btn):
             layout.addWidget(btn)
 
         layout.addStretch()
 
+        self._archive_btn   = self._make_btn("📦", _("Archive"),   self.archive_requested)
+        self._trash_btn     = self._make_btn("🗑", _("Trash"),     self.trash_requested)
         self._settings_btn  = self._make_btn("⚙️", _("Settings"), None)
         self._settings_btn.clicked.connect(self._on_settings_click)
-        layout.addWidget(self._settings_btn)
+
+        for btn in (self._archive_btn, self._trash_btn, self._settings_btn):
+            layout.addWidget(btn)
 
     def retranslate_ui(self):
         """언어 변경 후 버튼 텍스트를 즉시 갱신한다."""

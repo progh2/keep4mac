@@ -353,13 +353,18 @@ class MainPanel(QWidget):
             sys.exit(0)
 
     def _on_font_settings(self):
-        from keeptray.core import settings as app_settings
         from keeptray.ui.font_settings_dialog import FontSettingsDialog
-        dlg = FontSettingsDialog(self)
-        if dlg.exec() == FontSettingsDialog.DialogCode.Accepted:
-            app_settings.set_fonts(dlg.get_fonts())
-            self._notes_w.retranslate_ui()      # 목록 재렌더 → 새 폰트 적용
-            self._editor_w.apply_fonts()         # 편집기 폰트 즉시 반영
+        if hasattr(self, "_font_dlg") and self._font_dlg.isVisible():
+            self._font_dlg.raise_()
+            self._font_dlg.activateWindow()
+            return
+        self._font_dlg = FontSettingsDialog(self)
+        self._font_dlg.fonts_changed.connect(self._apply_font_change)
+        self._font_dlg.show()
+
+    def _apply_font_change(self, _fonts: dict):
+        self._notes_w.retranslate_ui()
+        self._editor_w.apply_fonts()
 
     def _on_lang_changed(self, lang: str):
         i18n.setup()

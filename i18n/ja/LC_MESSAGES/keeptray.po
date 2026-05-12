@@ -166,3 +166,102 @@ msgstr "マイメール"
 
 msgid "Enter your email address:"
 msgstr "メールアドレスを入力してください:"
+
+msgid "Archive"
+msgstr "アーカイブ"
+
+msgid "Trash"
+msgstr "ゴミ箱"
+
+msgid "📦  Archive"
+msgstr "📦  アーカイブ"
+
+msgid "🗑  Trash"
+msgstr "🗑  ゴミ箱"
+
+msgid "↩  Unarchive"
+msgstr "↩  アーカイブ解除"
+
+msgid "↩  Restore"
+msgstr "↩  復元"
+
+msgid "✕  Delete"
+msgstr "✕  削除"
+
+msgid "Empty Trash"
+msgstr "ゴミ箱を空にする"
+
+msgid "Delete permanently"
+msgstr "完全に削除"
+
+msgid "All notes in Trash will be permanently deleted."
+msgstr "ゴミ箱内のすべてのメモが完全に削除されます。"
+
+msgid "This note will be permanently deleted and cannot be recovered."
+msgstr "このメモは完全に削除され、復元できません。"
+
+msgid "Back"
+msgstr "戻る"
+
+msgid "Font Settings"
+msgstr "フォント設定"
+
+msgid "Font Settings…"
+msgstr "フォント設定…"
+
+msgid "Restore Defaults"
+msgstr "デフォルトに戻す"
+
+msgid "Sort"
+msgstr "並べ替え"
+
+msgid "Modified (Newest)"
+msgstr "更新日時（新しい順）"
+
+msgid "Modified (Oldest)"
+msgstr "更新日時（古い順）"
+
+msgid "Created (Newest)"
+msgstr "作成日時（新しい順）"
+
+msgid "Created (Oldest)"
+msgstr "作成日時（古い順）"
+
+msgid "Title (A→Z)"
+msgstr "タイトル（昇順）"
+
+msgid "Title (Z→A)"
+msgstr "タイトル（降順）"
+
+msgid "Update Available"
+msgstr "アップデートがあります"
+
+msgid "is available!"
+msgstr "がリリースされました！"
+
+msgid "Click to update"
+msgstr "クリックでアップデート"
+
+msgid "Current version"
+msgstr "現在のバージョン"
+
+msgid "Release notes:"
+msgstr "リリースノート:"
+
+msgid "Downloading…"
+msgstr "ダウンロード中…"
+
+msgid "Installing…"
+msgstr "インストール中…"
+
+msgid "Later"
+msgstr "後で"
+
+msgid "Update Now"
+msgstr "今すぐアップデート"
+
+msgid "No asset for this platform"
+msgstr "このプラットフォーム用のファイルがありません"
+
+msgid "Autostart"
+msgstr "自動起動"

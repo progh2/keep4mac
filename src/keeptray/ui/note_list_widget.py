@@ -137,12 +137,12 @@ class NoteListWidget(QWidget):
         """)
 
         entries = [
-            ("updated", True,  _("수정일 최신순")),
-            ("updated", False, _("수정일 오래된순")),
-            ("created", True,  _("생성일 최신순")),
-            ("created", False, _("생성일 오래된순")),
-            ("title",   False, _("제목 오름차순")),
-            ("title",   True,  _("제목 내림차순")),
+            ("updated", True,  _("Modified (Newest)")),
+            ("updated", False, _("Modified (Oldest)")),
+            ("created", True,  _("Created (Newest)")),
+            ("created", False, _("Created (Oldest)")),
+            ("title",   False, _("Title (A→Z)")),
+            ("title",   True,  _("Title (Z→A)")),
         ]
         for key, desc, label in entries:
             prefix = "✓ " if self._sort["key"] == key and self._sort["desc"] == desc else "   "

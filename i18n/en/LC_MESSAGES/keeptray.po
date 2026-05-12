@@ -166,3 +166,102 @@ msgstr ""
 
 msgid "Enter your email address:"
 msgstr ""
+
+msgid "Archive"
+msgstr ""
+
+msgid "Trash"
+msgstr ""
+
+msgid "📦  Archive"
+msgstr ""
+
+msgid "🗑  Trash"
+msgstr ""
+
+msgid "↩  Unarchive"
+msgstr ""
+
+msgid "↩  Restore"
+msgstr ""
+
+msgid "✕  Delete"
+msgstr ""
+
+msgid "Empty Trash"
+msgstr ""
+
+msgid "Delete permanently"
+msgstr ""
+
+msgid "All notes in Trash will be permanently deleted."
+msgstr ""
+
+msgid "This note will be permanently deleted and cannot be recovered."
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Font Settings"
+msgstr ""
+
+msgid "Font Settings…"
+msgstr ""
+
+msgid "Restore Defaults"
+msgstr ""
+
+msgid "Sort"
+msgstr ""
+
+msgid "Modified (Newest)"
+msgstr ""
+
+msgid "Modified (Oldest)"
+msgstr ""
+
+msgid "Created (Newest)"
+msgstr ""
+
+msgid "Created (Oldest)"
+msgstr ""
+
+msgid "Title (A→Z)"
+msgstr ""
+
+msgid "Title (Z→A)"
+msgstr ""
+
+msgid "Update Available"
+msgstr ""
+
+msgid "is available!"
+msgstr ""
+
+msgid "Click to update"
+msgstr ""
+
+msgid "Current version"
+msgstr ""
+
+msgid "Release notes:"
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+msgid "Installing…"
+msgstr ""
+
+msgid "Later"
+msgstr ""
+
+msgid "Update Now"
+msgstr ""
+
+msgid "No asset for this platform"
+msgstr ""
+
+msgid "Autostart"
+msgstr ""

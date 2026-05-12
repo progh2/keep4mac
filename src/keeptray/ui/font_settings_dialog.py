@@ -1,7 +1,8 @@
-"""폰트 종류·크기 설정 다이얼로그."""
-from PyQt6.QtCore import Qt
+"""폰트 종류·크기 설정 다이얼로그 (모달리스 — 변경 즉시 앱에 반영)."""
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
-    QDialog, QDialogButtonBox, QFontComboBox, QFormLayout, QHBoxLayout,
+    QDialog, QFontComboBox, QFormLayout, QHBoxLayout,
     QLabel, QPushButton, QSpinBox, QVBoxLayout,
 )
 
@@ -28,19 +29,26 @@ _ROWS = [
 
 
 class FontSettingsDialog(QDialog):
+    """모달리스 폰트 설정 창. 변경할 때마다 fonts_changed 시그널을 emit한다."""
+    fonts_changed = pyqtSignal(dict)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Font Settings"))
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(420)
         self.setStyleSheet(_DLG_CSS)
+        # 모달리스 + 항상 패널 위에 유지
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
             | Qt.WindowType.WindowTitleHint
             | Qt.WindowType.WindowCloseButtonHint
         )
+        self.setWindowModality(Qt.WindowModality.NonModal)
         self._combos: dict[str, QFontComboBox] = {}
         self._spins: dict[str, QSpinBox] = {}
+        self._orig_fonts: dict = app_settings.get_fonts()  # 열었을 때 원본
+        self._block_signals = False
         self._build_ui()
         self._load_current()
 
@@ -69,7 +77,6 @@ class FontSettingsDialog(QDialog):
             row.addWidget(spin)
 
             form.addRow(label, row)
-
             self._combos[key] = combo
             self._spins[key] = spin
 
@@ -98,32 +105,51 @@ class FontSettingsDialog(QDialog):
         btn_row.addWidget(reset_btn)
         btn_row.addStretch()
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        cancel_btn = QPushButton(_("Cancel"))
+        cancel_btn.setStyleSheet(
+            "QPushButton { background: transparent; color: #636366;"
+            "border: 1px solid #d1d1d6; border-radius: 6px; font-size: 13px; padding: 6px 16px; }"
+            "QPushButton:hover { background: #f2f2f7; }"
         )
-        buttons.setStyleSheet("color: #1c1c1e;")
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        btn_row.addWidget(buttons)
+        cancel_btn.clicked.connect(self._on_cancel)
+        btn_row.addWidget(cancel_btn)
+
+        close_btn = QPushButton(_("Close"))
+        close_btn.setStyleSheet(
+            "QPushButton { background: #007AFF; color: white;"
+            "border: none; border-radius: 6px; font-size: 13px; padding: 6px 16px; }"
+            "QPushButton:hover { background: #0066d6; }"
+        )
+        close_btn.clicked.connect(self.close)
+        btn_row.addWidget(close_btn)
 
         outer.addLayout(btn_row)
 
-        # 미리보기 업데이트 연결
+        # 변경 시 즉시 반영
         for key in self._combos:
-            self._combos[key].currentFontChanged.connect(self._update_preview)
-            self._spins[key].valueChanged.connect(self._update_preview)
+            self._combos[key].currentFontChanged.connect(self._on_changed)
+            self._spins[key].valueChanged.connect(self._on_changed)
 
     def _load_current(self):
+        self._block_signals = True
         fonts = app_settings.get_fonts()
         for key in self._combos:
             f = fonts[key]
             if f["family"]:
-                self._combos[key].setCurrentFont(self._combos[key].currentFont().__class__(f["family"]))
+                self._combos[key].setCurrentFont(QFont(f["family"]))
             self._spins[key].setValue(f["size"])
+        self._block_signals = False
         self._update_preview()
 
+    def _on_changed(self):
+        if self._block_signals:
+            return
+        fonts = self._current_fonts()
+        app_settings.set_fonts(fonts)
+        self._update_preview()
+        self.fonts_changed.emit(fonts)
+
     def _update_preview(self):
-        # 편집기 본문 폰트로 미리보기 갱신
         family = self._combos["editor_body"].currentFont().family()
         size = self._spins["editor_body"].value()
         family_css = f'font-family: "{family}";' if family else ""
@@ -134,18 +160,28 @@ class FontSettingsDialog(QDialog):
         )
 
     def _on_reset(self):
+        self._block_signals = True
         defaults = app_settings.get_font_defaults()
         for key in self._combos:
             d = defaults[key]
-            if d["family"]:
-                from PyQt6.QtGui import QFont
-                self._combos[key].setCurrentFont(QFont(d["family"]))
-            else:
-                from PyQt6.QtGui import QFont
-                self._combos[key].setCurrentFont(QFont())
+            self._combos[key].setCurrentFont(QFont(d["family"]) if d["family"] else QFont())
             self._spins[key].setValue(d["size"])
+        self._block_signals = False
+        self._on_changed()
 
-    def get_fonts(self) -> dict:
+    def _on_cancel(self):
+        """원본 설정으로 되돌리고 닫는다."""
+        self._block_signals = True
+        for key in self._combos:
+            f = self._orig_fonts[key]
+            self._combos[key].setCurrentFont(QFont(f["family"]) if f["family"] else QFont())
+            self._spins[key].setValue(f["size"])
+        self._block_signals = False
+        app_settings.set_fonts(self._orig_fonts)
+        self.fonts_changed.emit(self._orig_fonts)
+        self.close()
+
+    def _current_fonts(self) -> dict:
         return {
             key: {
                 "family": self._combos[key].currentFont().family(),

@@ -166,3 +166,102 @@ msgstr "내 메일 주소"
 
 msgid "Enter your email address:"
 msgstr "이메일 주소를 입력하세요:"
+
+msgid "Archive"
+msgstr "보관함"
+
+msgid "Trash"
+msgstr "휴지통"
+
+msgid "📦  Archive"
+msgstr "📦  보관함"
+
+msgid "🗑  Trash"
+msgstr "🗑  휴지통"
+
+msgid "↩  Unarchive"
+msgstr "↩  보관 해제"
+
+msgid "↩  Restore"
+msgstr "↩  복원"
+
+msgid "✕  Delete"
+msgstr "✕  삭제"
+
+msgid "Empty Trash"
+msgstr "휴지통 비우기"
+
+msgid "Delete permanently"
+msgstr "영구 삭제"
+
+msgid "All notes in Trash will be permanently deleted."
+msgstr "휴지통의 모든 노트가 영구 삭제됩니다."
+
+msgid "This note will be permanently deleted and cannot be recovered."
+msgstr "이 노트는 영구 삭제되며 복구할 수 없습니다."
+
+msgid "Back"
+msgstr "뒤로"
+
+msgid "Font Settings"
+msgstr "폰트 설정"
+
+msgid "Font Settings…"
+msgstr "폰트 설정…"
+
+msgid "Restore Defaults"
+msgstr "기본값으로"
+
+msgid "Sort"
+msgstr "정렬"
+
+msgid "Modified (Newest)"
+msgstr "수정일 최신순"
+
+msgid "Modified (Oldest)"
+msgstr "수정일 오래된순"
+
+msgid "Created (Newest)"
+msgstr "생성일 최신순"
+
+msgid "Created (Oldest)"
+msgstr "생성일 오래된순"
+
+msgid "Title (A→Z)"
+msgstr "제목 오름차순"
+
+msgid "Title (Z→A)"
+msgstr "제목 내림차순"
+
+msgid "Update Available"
+msgstr "업데이트 가능"
+
+msgid "is available!"
+msgstr "출시!"
+
+msgid "Click to update"
+msgstr "클릭하여 업데이트"
+
+msgid "Current version"
+msgstr "현재 버전"
+
+msgid "Release notes:"
+msgstr "릴리즈 노트:"
+
+msgid "Downloading…"
+msgstr "다운로드 중…"
+
+msgid "Installing…"
+msgstr "설치 중…"
+
+msgid "Later"
+msgstr "나중에"
+
+msgid "Update Now"
+msgstr "지금 업데이트"
+
+msgid "No asset for this platform"
+msgstr "이 플랫폼용 파일이 없습니다"
+
+msgid "Autostart"
+msgstr "자동시작"
