@@ -117,7 +117,7 @@ def run_browser_login() -> tuple[str, str, dict, str]:
             "로그인 후 Keep 페이지가 열릴 때까지 기다려주세요."
         )
 
-    logger.info("인증 정보 추출 완료 (email=%s, api_key=%s…)", email or "unknown", (captured_key or "")[:8])
+    logger.info("인증 정보 추출 완료 (인증 성공=%s)", bool(email and captured_key))
     return email, sapisid, cookies_dict, captured_key or ""
 
 

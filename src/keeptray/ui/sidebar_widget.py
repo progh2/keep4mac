@@ -63,6 +63,7 @@ _MENU_CSS = """
 
 class SidebarWidget(QWidget):
     new_note_requested = pyqtSignal()
+    new_note_from_clipboard_requested = pyqtSignal(str)   # clipboard text
     sync_requested = pyqtSignal()
     archive_requested = pyqtSignal()
     trash_requested = pyqtSignal()
@@ -71,6 +72,7 @@ class SidebarWidget(QWidget):
     logout_requested = pyqtSignal()
     quit_requested = pyqtSignal()
     lang_changed = pyqtSignal(str)
+    theme_changed = pyqtSignal(str)
     font_settings_requested = pyqtSignal()
     label_selected = pyqtSignal(str)          # label_id, 빈 문자열 = 전체
     label_manager_requested = pyqtSignal()
@@ -90,6 +92,8 @@ class SidebarWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self._new_note_btn = self._make_btn("🗒", _("New Note"), self.new_note_requested)
+        self._new_note_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._new_note_btn.customContextMenuRequested.connect(self._on_new_note_context)
         self._sync_btn     = self._make_btn("🔄", _("Sync"),     self.sync_requested)
         layout.addWidget(self._new_note_btn)
         layout.addWidget(self._sync_btn)
@@ -199,6 +203,20 @@ class SidebarWidget(QWidget):
         self._trash_btn.setText(f"🗑\n{self._wrap_label(_('Trash'))}")
         self._settings_btn.setText(f"⚙️\n{self._wrap_label(_('Settings'))}")
 
+    # ── 새 노트 우클릭 메뉴 ──────────────────────────────────────
+
+    def _on_new_note_context(self, pos):
+        from PyQt6.QtWidgets import QApplication
+        menu = QMenu(self)
+        menu.setStyleSheet(_MENU_CSS)
+        new_act = menu.addAction(f"🗒  {_('New Note')}")
+        new_act.triggered.connect(lambda: self.new_note_requested.emit())
+        clip_text = QApplication.clipboard().text().strip()
+        if clip_text:
+            clip_act = menu.addAction(f"📋  {_('New Note from Clipboard')}")
+            clip_act.triggered.connect(lambda: self.new_note_from_clipboard_requested.emit(clip_text))
+        menu.exec(self._new_note_btn.mapToGlobal(pos))
+
     # ── 설정 메뉴 ─────────────────────────────────────────────
 
     def _on_settings_click(self):
@@ -233,6 +251,21 @@ class SidebarWidget(QWidget):
 
         label_act = menu.addAction(f"🏷  {_('Label Management…')}")
         label_act.triggered.connect(lambda: self.label_manager_requested.emit())
+
+        from keeptray.core import settings as _settings
+        theme_menu = menu.addMenu(f"🌙  {_('Theme')}")
+        theme_menu.setStyleSheet(_MENU_CSS)
+        cur_theme = _settings.get_theme()
+        _THEMES = [("system", _("System")), ("light", _("Light")), ("dark", _("Dark"))]
+        for tkey, tname in _THEMES:
+            label = f"✓  {tname}" if tkey == cur_theme else f"    {tname}"
+            act = theme_menu.addAction(label)
+            if tkey == cur_theme:
+                act.setEnabled(False)
+            else:
+                act.triggered.connect(
+                    lambda checked=False, k=tkey: self._on_theme_select(k)
+                )
 
         menu.addSeparator()
 
@@ -306,6 +339,11 @@ class SidebarWidget(QWidget):
     def _on_lang_select(self, code: str):
         i18n.save_lang(code)
         self.lang_changed.emit(code)
+
+    def _on_theme_select(self, key: str):
+        from keeptray.core import settings as _settings
+        _settings.set_theme(key)
+        self.theme_changed.emit(key)
 
     # ── 공통 헬퍼 ─────────────────────────────────────────────
 

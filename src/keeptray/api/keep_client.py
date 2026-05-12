@@ -60,6 +60,7 @@ class _SAPIAuth(req_lib.auth.AuthBase):
 def _save_session(cookies: dict, api_key: str) -> None:
     _SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
     _SESSION_PATH.write_text(json.dumps({"cookies": cookies, "api_key": api_key}))
+    _SESSION_PATH.chmod(0o600)
 
 
 def _load_session() -> tuple[dict, str]:

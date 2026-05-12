@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
 
 from keeptray.api.keep_client import KeepClient
 from keeptray.core import settings
+from keeptray.core import theme as _theme
 import keeptray.i18n as i18n
 from keeptray.ui.about_dialog import AboutDialog
 from keeptray.ui.login_widget import LoginWidget
@@ -40,14 +41,16 @@ class _DragBar(QWidget):
         super().__init__(parent)
         self.setFixedHeight(self._HEIGHT)
         self.setCursor(Qt.CursorShape.SizeAllCursor)
-        self.setStyleSheet("background: #f5f5f7; border-bottom: 1px solid #e0e0e0;")
         self._drag_pos: QPoint | None = None
+        self._handle_lbl: QLabel | None = None
+        self.apply_theme()
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 0, 8, 0)
         layout.setSpacing(0)
 
         handle = QLabel("⠿")
+        self._handle_lbl = handle
         handle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         handle.setStyleSheet("color: #c0c0c0; font-size: 13px; background: transparent;")
 
@@ -88,6 +91,13 @@ class _DragBar(QWidget):
         self._drag_pos = None
         super().mouseReleaseEvent(event)
 
+    def apply_theme(self):
+        from keeptray.core.theme import get_colors
+        c = get_colors()
+        self.setStyleSheet(
+            f"background: {c['bg']}; border-bottom: 1px solid {c['border']};"
+        )
+
 
 class MainPanel(QWidget):
     _RADIUS = 12.0
@@ -125,12 +135,14 @@ class MainPanel(QWidget):
 
         self._sidebar = SidebarWidget()
         self._sidebar.new_note_requested.connect(self._on_new_note)
+        self._sidebar.new_note_from_clipboard_requested.connect(self._on_new_note_from_clipboard)
         self._sidebar.sync_requested.connect(self._on_sync)
         self._sidebar.open_web_requested.connect(self._on_open_web)
         self._sidebar.about_requested.connect(self._on_about)
         self._sidebar.logout_requested.connect(self._on_logout)
         self._sidebar.quit_requested.connect(self._on_quit)
         self._sidebar.lang_changed.connect(self._on_lang_changed)
+        self._sidebar.theme_changed.connect(self._on_theme_changed)
         self._sidebar.font_settings_requested.connect(self._on_font_settings)
         self._sidebar.archive_requested.connect(self._on_archive)
         self._sidebar.trash_requested.connect(self._on_trash)
@@ -142,7 +154,7 @@ class MainPanel(QWidget):
         # 콘텐츠 스택 — WA_TranslucentBackground 환경에서 페이지 전환 시 잔상 방지
         self._stack = QStackedWidget()
         self._stack.setAutoFillBackground(True)
-        self._stack.setStyleSheet("QStackedWidget { background: #ffffff; }")
+        self._stack.setStyleSheet(f"QStackedWidget {{ background: {_theme.get_colors()['surface']}; }}")
 
         self._login_w = LoginWidget(self._client)
         self._login_w.login_success.connect(self._on_login_success)
@@ -151,6 +163,7 @@ class MainPanel(QWidget):
         self._notes_w.note_selected.connect(self._on_note_selected)
 
         self._notes_w.sync_done.connect(self._refresh_labels)
+        self._notes_w.auth_expired.connect(self._on_auth_expired)
 
         self._editor_w = NoteEditorWidget(self._client)
         self._editor_w.back_requested.connect(self._on_editor_back)
@@ -267,6 +280,11 @@ class MainPanel(QWidget):
         self._editor_w.new_note()
         self._stack.setCurrentIndex(_IDX_EDITOR)
 
+    def _on_new_note_from_clipboard(self, text: str):
+        self._editor_w.new_note()
+        self._editor_w.set_body_text(text)
+        self._stack.setCurrentIndex(_IDX_EDITOR)
+
     def _on_editor_back(self):
         self._show_notes()
 
@@ -291,6 +309,19 @@ class MainPanel(QWidget):
 
     def _on_label_selected(self, label_id: str):
         self._notes_w.filter_by_label(label_id)
+
+    def _on_auth_expired(self):
+        from PyQt6.QtWidgets import QMessageBox
+        msg = QMessageBox(self)
+        msg.setWindowTitle(_("Session expired"))
+        msg.setText(_("Your session has expired.\nPlease log out and sign in again."))
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        )
+        msg.button(QMessageBox.StandardButton.Ok).setText(_("Logout"))
+        msg.button(QMessageBox.StandardButton.Cancel).setText(_("Later"))
+        if msg.exec() == QMessageBox.StandardButton.Ok:
+            self._sidebar.logout_requested.emit()
 
     def _on_label_manager(self):
         from keeptray.ui.label_manager_dialog import LabelManagerDialog
@@ -404,6 +435,13 @@ class MainPanel(QWidget):
             f"Language changed to {lang_name}."
         )
         self._show_toast(msg)
+
+    def _on_theme_changed(self, key: str):
+        c = _theme.get_colors()
+        self._drag_bar.apply_theme()
+        self._stack.setStyleSheet(f"QStackedWidget {{ background: {c['surface']}; }}")
+        self._notes_w.apply_theme()
+        self.repaint()
 
     def _show_toast(self, message: str):
         toast = QLabel(message, self)

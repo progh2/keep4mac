@@ -292,3 +292,33 @@ msgstr "라벨 없음"
 
 msgid "Add"
 msgstr "추가"
+
+msgid "New Note from Clipboard"
+msgstr "클립보드로 새 노트"
+
+msgid "Offline"
+msgstr "오프라인"
+
+msgid "Showing cached notes"
+msgstr "캐시된 노트를 표시 중"
+
+msgid "Session expired"
+msgstr "세션 만료"
+
+msgid "Please log in again"
+msgstr "다시 로그인해주세요"
+
+msgid "Your session has expired.\nPlease log out and sign in again."
+msgstr "세션이 만료됐습니다.\n로그아웃 후 다시 로그인해주세요."
+
+msgid "Theme"
+msgstr "테마"
+
+msgid "System"
+msgstr "시스템"
+
+msgid "Light"
+msgstr "라이트"
+
+msgid "Dark"
+msgstr "다크"

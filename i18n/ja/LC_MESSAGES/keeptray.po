@@ -292,3 +292,33 @@ msgstr "ラベルなし"
 
 msgid "Add"
 msgstr "追加"
+
+msgid "New Note from Clipboard"
+msgstr "クリップボードから新規メモ"
+
+msgid "Offline"
+msgstr "オフライン"
+
+msgid "Showing cached notes"
+msgstr "キャッシュされたメモを表示中"
+
+msgid "Session expired"
+msgstr "セッション期限切れ"
+
+msgid "Please log in again"
+msgstr "再度ログインしてください"
+
+msgid "Your session has expired.\nPlease log out and sign in again."
+msgstr "セッションが期限切れです。\nログアウトして再度サインインしてください。"
+
+msgid "Theme"
+msgstr "テーマ"
+
+msgid "System"
+msgstr "システム"
+
+msgid "Light"
+msgstr "ライト"
+
+msgid "Dark"
+msgstr "ダーク"

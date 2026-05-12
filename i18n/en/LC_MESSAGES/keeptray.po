@@ -292,3 +292,33 @@ msgstr ""
 
 msgid "Add"
 msgstr ""
+
+msgid "New Note from Clipboard"
+msgstr ""
+
+msgid "Offline"
+msgstr ""
+
+msgid "Showing cached notes"
+msgstr ""
+
+msgid "Session expired"
+msgstr ""
+
+msgid "Please log in again"
+msgstr ""
+
+msgid "Your session has expired.\nPlease log out and sign in again."
+msgstr ""
+
+msgid "Theme"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Dark"
+msgstr ""

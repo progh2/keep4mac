@@ -86,3 +86,14 @@ def set_fonts(fonts: dict) -> None:
 
 def get_font_defaults() -> dict:
     return {k: dict(v) for k, v in _FONT_DEFAULTS.items()}
+
+
+def get_theme() -> str:
+    """테마 반환: 'system' | 'light' | 'dark'"""
+    return _load().get("theme", "system")
+
+
+def set_theme(theme: str) -> None:
+    data = _load()
+    data["theme"] = theme
+    _save(data)

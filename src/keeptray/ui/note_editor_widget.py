@@ -61,8 +61,10 @@ class _TranslateThread(QThread):
         resp.raise_for_status()
         data = resp.json()
         if data.get("responseStatus") == 200:
-            return data["responseData"]["translatedText"]
-        raise RuntimeError(data.get("responseDetails", "Translation error"))
+            translated = (data.get("responseData") or {}).get("translatedText")
+            if translated:
+                return translated
+        raise RuntimeError(data.get("responseDetails") or "Translation error")
 
     def run(self):
         try:
@@ -641,6 +643,11 @@ class NoteEditorWidget(QWidget):
         self._populate(note)
         self._orig_title, self._orig_body = self._note_content()
         self._update_revert_btn()
+
+    def set_body_text(self, text: str):
+        """new_note() 호출 후 본문을 미리 채울 때 사용한다."""
+        self._body_edit.setPlainText(text)
+        self._body_edit.moveCursor(self._body_edit.textCursor().MoveOperation.End)
 
     def new_note(self):
         self._note_id = None

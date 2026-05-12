@@ -88,7 +88,7 @@ def download(url: str, progress_cb: Optional[Callable[[int, int], None]] = None)
 def apply_macos(dmg_path: Path) -> None:
     """DMG 마운트 → .app 교체 → 언마운트 → 재실행."""
     mount_out = subprocess.check_output(
-        ["hdiutil", "attach", str(dmg_path), "-nobrowse", "-quiet", "-plist"],
+        ["/usr/bin/hdiutil", "attach", str(dmg_path), "-nobrowse", "-quiet", "-plist"],
         stderr=subprocess.DEVNULL,
     ).decode()
 
@@ -117,15 +117,15 @@ def apply_macos(dmg_path: Path) -> None:
 
         dest_parent = current_app.parent
         subprocess.run(
-            ["rsync", "-a", "--delete",
+            ["/usr/bin/rsync", "-a", "--delete",
              str(src_app) + "/", str(current_app) + "/"],
             check=True,
         )
         # 재실행
-        subprocess.Popen(["open", str(current_app)])
+        subprocess.Popen(["/usr/bin/open", str(current_app)])
     finally:
         subprocess.run(
-            ["hdiutil", "detach", mount_point, "-quiet", "-force"],
+            ["/usr/bin/hdiutil", "detach", mount_point, "-quiet", "-force"],
             capture_output=True,
         )
         dmg_path.unlink(missing_ok=True)
@@ -151,16 +151,20 @@ def apply_windows(zip_path: Path) -> None:
     if not extracted.exists():
         extracted = update_dir
 
-    bat = Path(tempfile.mktemp(suffix=".bat", prefix="keeptray_upd_"))
-    bat.write_text(
-        "@echo off\r\n"
-        "timeout /t 3 /nobreak > nul\r\n"
-        f'xcopy /e /y /q "{extracted}\\" "{install_dir}\\"\r\n'
-        f'start "" "{install_dir / exe.name}"\r\n'
-        f'rd /s /q "{update_dir}"\r\n'
-        'del "%~f0"\r\n',
-        encoding="utf-8",
-    )
+    import os
+    fd, bat_path = tempfile.mkstemp(suffix=".bat", prefix="keeptray_upd_")
+    try:
+        os.write(fd, (
+            "@echo off\r\n"
+            "timeout /t 3 /nobreak > nul\r\n"
+            f'xcopy /e /y /q "{extracted}\\" "{install_dir}\\"\r\n'
+            f'start "" "{install_dir / exe.name}"\r\n'
+            f'rd /s /q "{update_dir}"\r\n'
+            'del "%~f0"\r\n'
+        ).encode("utf-8"))
+    finally:
+        os.close(fd)
+    bat = Path(bat_path)
     subprocess.Popen(
         ["cmd.exe", "/c", str(bat)],
         creationflags=subprocess.CREATE_NO_WINDOW,
