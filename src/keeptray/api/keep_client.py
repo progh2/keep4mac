@@ -8,6 +8,7 @@ from typing import Optional
 from uuid import getnode as get_mac
 
 import gkeepapi
+import gkeepapi.exception as gkeep_exc
 import keyring
 import requests as req_lib
 
@@ -313,6 +314,25 @@ class KeepClient:
         try:
             self._keep.sync()
             self._last_sync_time = time.time()
+        except gkeep_exc.LoginException as e:
+            # 세션 만료·인증 오류 → 재로그인 필요
+            self._logged_in = False
+            raise AuthError(f"인증 만료: {e}") from e
+        except gkeep_exc.ResyncRequiredException:
+            # gkeepapi 상태 불일치 → 전체 재동기화
+            try:
+                self._keep.sync(resync=True)
+                self._last_sync_time = time.time()
+            except gkeep_exc.LoginException as e2:
+                self._logged_in = False
+                raise AuthError(f"재동기화 중 인증 만료: {e2}") from e2
+            except Exception as e2:
+                raise SyncError(f"재동기화 실패: {e2}") from e2
+        except req_lib.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 401:
+                self._logged_in = False
+                raise AuthError(f"인증 만료 (HTTP 401)") from e
+            raise SyncError(f"동기화 실패: {e}") from e
         except Exception as e:
             raise SyncError(f"동기화 실패: {e}") from e
 

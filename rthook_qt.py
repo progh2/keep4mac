@@ -14,3 +14,10 @@ if getattr(sys, "frozen", False):
     _resources = os.path.join(os.path.dirname(_base), "Resources")
     if _resources not in sys.path:
         sys.path.insert(0, _resources)
+
+    # Windows frozen 환경에서 requests/ssl이 certifi 번들을 찾도록 경로 설정
+    if sys.platform == "win32":
+        _cert = os.path.join(_base, "certifi", "cacert.pem")
+        if os.path.exists(_cert):
+            os.environ.setdefault("SSL_CERT_FILE", _cert)
+            os.environ.setdefault("REQUESTS_CA_BUNDLE", _cert)

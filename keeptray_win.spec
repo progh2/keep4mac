@@ -47,6 +47,7 @@ a = Analysis(
         # Keep API
         "gkeepapi",
         "gkeepapi.node",
+        "gkeepapi.exception",
         "gpsoauth",
         "gpsoauth.google",
         "future",
