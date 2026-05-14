@@ -5,7 +5,8 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from keeptray.core import settings as app_settings
-from keeptray.core.models import NoteModel, NoteType
+from keeptray.core.models import NoteColor, NoteModel, NoteType
+from keeptray.core.theme import get_colors, is_dark
 from keeptray.core.url_utils import extract_urls, short_url
 from keeptray.i18n import gettext as _
 
@@ -58,7 +59,7 @@ class NoteItemWidget(QFrame):
         self._copy_btn: QPushButton | None = None
         self._clip_text = self._build_clip_text(note)
         self._build_ui(note)
-        self._apply_style(note.color_hex)
+        self._apply_style(note)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if note.image_url and fetch_fn:
             self._load_image(note.image_url)
@@ -84,6 +85,7 @@ class NoteItemWidget(QFrame):
 
         # 텍스트 영역
         text_w = QFrame()
+        text_w.setStyleSheet("background: transparent;")
         tl = QVBoxLayout(text_w)
         tl.setContentsMargins(12, 10, 12, 10)
         tl.setSpacing(4)
@@ -101,9 +103,10 @@ class NoteItemWidget(QFrame):
 
         if note.title or note.pinned:
             title_label = QLabel(note.title)
+            c = get_colors()
             title_css = _font_css(
                 fonts["list_title"]["family"], fonts["list_title"]["size"],
-                "font-weight: 600; color: #1c1c1e; background: transparent;"
+                f"font-weight: 600; color: {c['text']}; background: transparent;"
             )
             title_label.setStyleSheet(title_css)
             title_label.setWordWrap(True)
@@ -125,9 +128,10 @@ class NoteItemWidget(QFrame):
         content = note.content
         if content:
             content_label = QLabel(content)
+            c = get_colors()
             content_css = _font_css(
                 fonts["list_content"]["family"], fonts["list_content"]["size"],
-                "color: #636366; background: transparent;"
+                f"color: {c['text2']}; background: transparent;"
             )
             content_label.setStyleSheet(content_css)
             content_label.setWordWrap(True)
@@ -151,15 +155,23 @@ class NoteItemWidget(QFrame):
 
         layout.addWidget(text_w)
 
-    def _apply_style(self, bg_hex: str):
+    def _apply_style(self, note: NoteModel):
+        c = get_colors()
+        dark = is_dark()
+        is_default = (note.color == NoteColor.DEFAULT)
+        bg = c['surface2'] if (is_default and dark) else (c['surface'] if is_default else note.color_hex)
+        border_color = c['border'] if is_default else note.color_hex
+        hover_border = c['border2'] if is_default else note.color_hex
+        left_bar = "" if is_default else f"border-left: 4px solid {note.color_hex};"
         self.setStyleSheet(f"""
             NoteItemWidget {{
-                background: {bg_hex};
-                border: 1px solid rgba(0,0,0,0.10);
+                background: {bg};
+                border: 1px solid {border_color};
+                {left_bar}
                 border-radius: 10px;
             }}
             NoteItemWidget:hover {{
-                border-color: rgba(0,0,0,0.22);
+                border-color: {hover_border};
             }}
         """)
 

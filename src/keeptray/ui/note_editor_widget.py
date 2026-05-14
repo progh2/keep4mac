@@ -36,6 +36,25 @@ class _IMETextEdit(QTextEdit):
         QGuiApplication.inputMethod().reset()
 
 
+def _detect_lang(text: str) -> str:
+    """유니코드 블록 비율로 소스 언어를 추론한다 (외부 라이브러리 불필요)."""
+    clean = text.replace(" ", "").replace("\n", "")
+    if not clean:
+        return "en"
+    ko = sum(1 for c in clean if "가" <= c <= "힣")
+    ja = sum(1 for c in clean if "぀" <= c <= "ヿ")
+    zh = sum(1 for c in clean if "一" <= c <= "鿿" and
+             not ("가" <= c <= "힣"))
+    total = len(clean)
+    if ko / total > 0.08:
+        return "ko"
+    if ja / total > 0.08:
+        return "ja"
+    if zh / total > 0.08:
+        return "zh"
+    return "en"
+
+
 # 번역 대상 언어 목록 — UI 언어 설정과 독립적으로 항상 전체 노출
 _TRANSLATE_LANGS: dict[str, str] = {
     "ko": "한국어",
@@ -60,13 +79,14 @@ class _TranslateThread(QThread):
         self._title = title
         self._content = content
         self._target = target
+        self._source = _detect_lang(f"{title} {content}")
 
     def _call(self, text: str) -> str:
         if not text.strip():
             return text
         resp = _req.get(
             self._API,
-            params={"q": text[:2000], "langpair": f"auto|{self._target}"},
+            params={"q": text[:2000], "langpair": f"{self._source}|{self._target}"},
             timeout=12,
         )
         resp.raise_for_status()
@@ -608,7 +628,7 @@ class NoteEditorWidget(QWidget):
     # ── 공개 API ──────────────────────────────────────────────
 
     def apply_theme(self):
-        from keeptray.core.theme import get_colors
+        from keeptray.core.theme import get_colors, is_dark
         c = get_colors()
         self._header_widget.setStyleSheet(
             f"background: {c['surface2']}; border-bottom: 1px solid {c['border']};"
@@ -644,6 +664,17 @@ class NoteEditorWidget(QWidget):
             btn.setStyleSheet(_icon_btn_css)
         self._apply_bg(self._current_color)
         self.apply_fonts()
+        # QPalette로 입력 위젯 텍스트 색상 강제 설정 (Qt 팔레트가 stylesheet보다 우선하는 경우 대비)
+        from PyQt6.QtGui import QColor, QPalette
+        dark = is_dark()
+        for widget in (self._title_edit, self._body_edit):
+            pal = widget.palette()
+            text_col = QColor(c['text'])
+            pal.setColor(QPalette.ColorRole.Text, text_col)
+            pal.setColor(QPalette.ColorRole.WindowText, text_col)
+            placeholder_col = QColor(c['text3'])
+            pal.setColor(QPalette.ColorRole.PlaceholderText, placeholder_col)
+            widget.setPalette(pal)
 
     def apply_fonts(self):
         """설정에서 폰트를 읽어 제목·본문 위젯에 즉시 적용한다."""

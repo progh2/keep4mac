@@ -200,6 +200,7 @@ class NoteListWidget(QWidget):
             QPushButton:hover {{ background: {c['border2']}; }}
         """)
         self._list_body.setStyleSheet(f"background: {c['surface']};")
+        self._render(self._all_notes)   # 카드 위젯 재생성으로 테마 즉시 반영
 
     # ── 정렬 ─────────────────────────────────────────────────
 
