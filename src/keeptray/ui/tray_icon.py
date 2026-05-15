@@ -31,8 +31,10 @@ _NSTrackingMouseEnteredAndExited = 0x01
 _NSTrackingActiveAlways = 0x80
 
 _open_panel_fn = None
+_reset_pos_fn = None
 _btn_ref = None
 _quit_item_ref = None
+_reset_pos_item_ref = None
 _default_image = None
 _colored_images: list = []
 
@@ -50,6 +52,13 @@ def _build_colored_images():
         _colored_images.append(base.imageWithSymbolConfiguration_(cfg))
 
 
+class _ResetPosTarget(NSObject):
+    """트레이 우클릭 메뉴 '위치 초기화' 액션 대상."""
+    def resetPos_(self, sender):
+        if _reset_pos_fn:
+            QTimer.singleShot(0, _reset_pos_fn)
+
+
 class _MenuDelegate(NSObject):
     """
     좌클릭: 메뉴를 즉시 취소하고 패널 토글.
@@ -61,6 +70,8 @@ class _MenuDelegate(NSObject):
         # 매번 현재 언어로 타이틀 갱신
         if _quit_item_ref is not None:
             _quit_item_ref.setTitle_(_("Quit keeptray"))
+        if _reset_pos_item_ref is not None:
+            _reset_pos_item_ref.setTitle_(_("Reset Position"))
         event = NSApplication.sharedApplication().currentEvent()
         # NSEventTypeLeftMouseDown = 1
         if event and int(event.type()) == 1:
@@ -100,12 +111,13 @@ class TrayApp(rumps.App):
         if self._click_setup_done:
             return
         self._click_setup_done = True
-        global _open_panel_fn, _btn_ref, _quit_item_ref
+        global _open_panel_fn, _reset_pos_fn, _btn_ref, _quit_item_ref, _reset_pos_item_ref
         try:
             from AppKit import NSApplication, NSMenu, NSMenuItem
             from keeptray.i18n import gettext as _
 
             _open_panel_fn = self._panel.toggle_visibility
+            _reset_pos_fn = self._panel.reset_position
             nsitem = self._nsapp.nsstatusitem
             btn = nsitem.button()
             _btn_ref = btn
@@ -115,9 +127,23 @@ class TrayApp(rumps.App):
                 btn.setImage_(_default_image)
                 btn.setTitle_("")
 
-            # Quit 메뉴 생성
+            # 트레이 우클릭 메뉴 구성
             menu = NSMenu.alloc().init()
             menu.setAutoenablesItems_(False)
+
+            # 위치 초기화
+            reset_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                _("Reset Position"), "resetPos:", ""
+            )
+            self._reset_pos_target = _ResetPosTarget.alloc().init()
+            reset_item.setTarget_(self._reset_pos_target)
+            reset_item.setEnabled_(True)
+            menu.addItem_(reset_item)
+            _reset_pos_item_ref = reset_item
+
+            menu.addItem_(NSMenuItem.separatorItem())
+
+            # Quit
             quit_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 _("Quit keeptray"), "terminate:", ""
             )

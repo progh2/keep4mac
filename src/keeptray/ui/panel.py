@@ -229,9 +229,29 @@ class MainPanel(QWidget):
 
     # ── 표시 ─────────────────────────────────────────────────
 
+    def _is_pos_on_screen(self, x: int, y: int) -> bool:
+        """저장된 위치(x, y)가 현재 연결된 화면 중 하나에 포함되는지 확인한다."""
+        from PyQt6.QtCore import QPoint
+        from PyQt6.QtGui import QGuiApplication
+        center = QPoint(x + self.width() // 2, y + self.height() // 2)
+        return any(s.availableGeometry().contains(center) for s in QGuiApplication.screens())
+
+    def reset_position(self):
+        """패널을 주 화면 중앙으로 이동하고 저장된 위치를 초기화한다."""
+        screen: QScreen = QApplication.primaryScreen()
+        sg = screen.availableGeometry()
+        x = sg.x() + (sg.width() - self.width()) // 2
+        y = sg.y() + (sg.height() - self.height()) // 2
+        self.move(x, y)
+        settings.set_window_pos(x, y)
+        if not self.isVisible():
+            self.show()
+            self.raise_()
+            self.activateWindow()
+
     def show_near_menubar(self):
         pos = settings.get_window_pos()
-        if pos:
+        if pos and self._is_pos_on_screen(pos[0], pos[1]):
             self.move(pos[0], pos[1])
         else:
             screen: QScreen = QApplication.primaryScreen()

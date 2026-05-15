@@ -58,6 +58,8 @@ class WindowsTray:
         menu = pystray.Menu(
             pystray.MenuItem("keeptray", self._on_toggle, default=True),
             pystray.Menu.SEPARATOR,
+            pystray.MenuItem("위치 초기화", self._on_reset_position),
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem("종료", self._on_quit),
         )
         self._icon = pystray.Icon(
@@ -75,6 +77,9 @@ class WindowsTray:
 
     def _on_toggle(self, icon, item):
         self._q.put(self._panel.toggle_visibility)
+
+    def _on_reset_position(self, icon, item):
+        self._q.put(self._panel.reset_position)
 
     def _on_quit(self, icon, item):
         def _do_quit():

@@ -322,3 +322,6 @@ msgstr "라이트"
 
 msgid "Dark"
 msgstr "다크"
+
+msgid "Reset Position"
+msgstr "위치 초기화"

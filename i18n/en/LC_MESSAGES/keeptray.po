@@ -322,3 +322,6 @@ msgstr ""
 
 msgid "Dark"
 msgstr ""
+
+msgid "Reset Position"
+msgstr ""
