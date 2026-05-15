@@ -325,3 +325,9 @@ msgstr ""
 
 msgid "Reset Position"
 msgstr ""
+
+msgid "Reconnect"
+msgstr ""
+
+msgid "Connecting…"
+msgstr ""

@@ -2,7 +2,7 @@ import dataclasses
 import logging
 from datetime import timezone
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QLineEdit, QMenu,
     QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget,
@@ -62,6 +62,9 @@ class NoteListWidget(QWidget):
         self._filter_label_id: str = ""
         self._filter_color: NoteColor | None = None
         self._color_btns: dict[NoteColor, QPushButton] = {}
+        self._retry_timer = QTimer()
+        self._retry_timer.setInterval(30_000)  # 30초마다 자동 재시도
+        self._retry_timer.timeout.connect(self._auto_retry)
         self._build_ui()
 
     # ── UI 구성 ───────────────────────────────────────────────
@@ -109,18 +112,36 @@ class NoteListWidget(QWidget):
 
         outer.addLayout(search_row)
 
-        # 오프라인 배너
-        self._offline_banner = QLabel()
-        self._offline_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # 오프라인 배너 (label + 재연결 버튼)
+        self._offline_banner = QFrame()
         self._offline_banner.setStyleSheet("""
-            QLabel {
+            QFrame {
                 background: #FF9500;
-                color: white;
-                font-size: 11px;
-                padding: 4px 8px;
                 border-radius: 6px;
             }
         """)
+        _banner_row = QHBoxLayout(self._offline_banner)
+        _banner_row.setContentsMargins(8, 4, 8, 4)
+        _banner_row.setSpacing(6)
+        self._offline_label = QLabel()
+        self._offline_label.setStyleSheet("color: white; font-size: 11px; background: transparent;")
+        _banner_row.addWidget(self._offline_label, 1)
+        self._retry_btn = QPushButton(_("Reconnect"))
+        self._retry_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._retry_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(255,255,255,0.25);
+                color: white;
+                font-size: 11px;
+                border: 1px solid rgba(255,255,255,0.5);
+                border-radius: 4px;
+                padding: 2px 8px;
+            }
+            QPushButton:hover { background: rgba(255,255,255,0.38); }
+            QPushButton:disabled { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
+        """)
+        self._retry_btn.clicked.connect(self._on_retry_clicked)
+        _banner_row.addWidget(self._retry_btn)
         self._offline_banner.hide()
         outer.addSpacing(4)
         outer.addWidget(self._offline_banner)
@@ -335,33 +356,50 @@ class NoteListWidget(QWidget):
             notes = [n for n in notes if q in n.title.lower() or q in n.text.lower()]
         self._render(notes)
 
+    def _on_retry_clicked(self):
+        self._retry_btn.setEnabled(False)
+        self._retry_btn.setText(_("Connecting…"))
+        self.load_notes(force_sync=True)
+
+    def _auto_retry(self):
+        if not self._syncing:
+            logger.debug("오프라인 자동 재시도")
+            self.load_notes(force_sync=True)
+
     def _on_sync_done(self, notes: list[NoteModel]):
         self._all_notes = notes
         self._apply_filters()
+        self._retry_timer.stop()
         self._offline_banner.hide()
         self.sync_done.emit()
 
     def _on_sync_error(self, msg: str):
         logger.warning("백그라운드 동기화 실패: %s", msg)
-        self._offline_banner.setText(f"⚠  {_('Offline')} — {_('Showing cached notes')}")
+        self._offline_banner.setStyleSheet("""
+            QFrame { background: #FF9500; border-radius: 6px; }
+        """)
+        self._offline_label.setText(f"⚠  {_('Offline')} — {_('Showing cached notes')}")
+        self._retry_btn.setEnabled(True)
+        self._retry_btn.setText(_("Reconnect"))
         self._offline_banner.show()
+        if not self._retry_timer.isActive():
+            self._retry_timer.start()
 
     def _on_auth_expired(self):
-        self._offline_banner.setText(f"🔒  {_('Session expired')} — {_('Please log in again')}")
+        self._retry_timer.stop()
         self._offline_banner.setStyleSheet("""
-            QLabel {
-                background: #FF3B30;
-                color: white;
-                font-size: 11px;
-                padding: 4px 8px;
-                border-radius: 6px;
-            }
+            QFrame { background: #FF3B30; border-radius: 6px; }
         """)
+        self._offline_label.setText(f"🔒  {_('Session expired')} — {_('Please log in again')}")
+        self._retry_btn.setEnabled(False)
+        self._retry_btn.setText(_("Reconnect"))
         self._offline_banner.show()
         self.auth_expired.emit()
 
     def _on_sync_finished(self):
         self._syncing = False
+        self._retry_btn.setEnabled(True)
+        self._retry_btn.setText(_("Reconnect"))
 
     # ── 검색 ─────────────────────────────────────────────────
 

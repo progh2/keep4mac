@@ -325,3 +325,9 @@ msgstr "ダーク"
 
 msgid "Reset Position"
 msgstr "位置をリセット"
+
+msgid "Reconnect"
+msgstr "再接続"
+
+msgid "Connecting…"
+msgstr "接続中…"

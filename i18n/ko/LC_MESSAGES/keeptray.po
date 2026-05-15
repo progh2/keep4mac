@@ -325,3 +325,9 @@ msgstr "다크"
 
 msgid "Reset Position"
 msgstr "위치 초기화"
+
+msgid "Reconnect"
+msgstr "재연결"
+
+msgid "Connecting…"
+msgstr "연결 중…"
