@@ -18,7 +18,34 @@ def _setup_playwright_browsers_path() -> None:
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers_dir)
 
 
+def _setup_error_log() -> None:
+    """Windows frozen 앱에서 미처리 예외를 파일에 기록한다."""
+    if sys.platform != "win32" or not getattr(sys, "frozen", False):
+        return
+    import logging
+    log_dir = Path(os.environ.get("APPDATA", Path.home())) / "keeptray"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "error.log"
+    logging.basicConfig(
+        filename=str(log_path),
+        level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        encoding="utf-8",
+    )
+
+    def _excepthook(exc_type, exc_value, exc_tb):
+        import traceback
+        logging.critical(
+            "Unhandled exception:\n%s",
+            "".join(traceback.format_exception(exc_type, exc_value, exc_tb)),
+        )
+    sys.excepthook = _excepthook
+
+
 def main():
+    # Windows frozen 앱 에러 로그 설정 (가장 먼저)
+    _setup_error_log()
+
     # 영구 브라우저 경로를 가장 먼저 설정 (PyInstaller 임시 경로 방지)
     _setup_playwright_browsers_path()
 

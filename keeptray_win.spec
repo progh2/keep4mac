@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Windows PyInstaller 스펙 — macOS BUNDLE 없음
+import os
 from pathlib import Path
 from PyInstaller.utils.hooks import copy_metadata, collect_data_files
 
@@ -15,16 +16,26 @@ for _pkg in ["gpsoauth", "gkeepapi", "requests", "keyring", "pystray", "PIL",
 
 # 데이터 파일이 필요한 패키지
 _extra_data = []
-for _pkg in ["docx", "hwpx", "certifi"]:
+for _pkg in ["docx", "hwpx", "certifi", "playwright"]:
     try:
         _extra_data += collect_data_files(_pkg)
     except Exception:
         pass
 
+# playwright driver 바이너리(node.exe) — collect_data_files는 JS만 반환하므로 별도 추가
+_playwright_binaries = []
+try:
+    import playwright as _pw
+    _node_exe = os.path.join(os.path.dirname(_pw.__file__), "driver", "node.exe")
+    if os.path.exists(_node_exe):
+        _playwright_binaries.append((_node_exe, "playwright/driver"))
+except Exception:
+    pass
+
 a = Analysis(
     ["main.py"],
     pathex=[SRC],
-    binaries=[],
+    binaries=_playwright_binaries,
     datas=[
         (SRC + "/keeptray", "keeptray"),
         ("i18n", "i18n"),
@@ -62,10 +73,13 @@ a = Analysis(
         "charset_normalizer",
         "idna",
 
-        # Playwright
+        # Playwright — _driver 는 frozen 경로 계산에 필수
         "playwright.sync_api",
         "playwright.async_api",
         "playwright._impl._api_types",
+        "playwright._impl._driver",
+        "playwright._impl._connection",
+        "playwright._impl._playwright",
         "pyee",
         "greenlet",
 
