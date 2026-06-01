@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,8 +61,13 @@ class _SAPIAuth(req_lib.auth.AuthBase):
 
 def _save_session(cookies: dict, api_key: str) -> None:
     _SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _SESSION_PATH.write_text(json.dumps({"cookies": cookies, "api_key": api_key}))
-    _SESSION_PATH.chmod(0o600)
+    content = json.dumps({"cookies": cookies, "api_key": api_key}).encode()
+    # os.open으로 생성과 동시에 0o600 적용 — write/chmod 사이 race condition 방지
+    fd = os.open(str(_SESSION_PATH), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, content)
+    finally:
+        os.close(fd)
 
 
 def _load_session() -> tuple[dict, str]:
@@ -370,10 +376,12 @@ class KeepClient:
     def _save_notes_cache(self, notes: list[NoteModel]) -> None:
         try:
             _NOTES_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            _NOTES_CACHE_PATH.write_text(
-                json.dumps([_note_to_dict(n) for n in notes], ensure_ascii=False),
-                encoding="utf-8",
-            )
+            content = json.dumps([_note_to_dict(n) for n in notes], ensure_ascii=False).encode("utf-8")
+            fd = os.open(str(_NOTES_CACHE_PATH), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            try:
+                os.write(fd, content)
+            finally:
+                os.close(fd)
         except Exception as e:
             logger.warning("노트 캐시 저장 실패: %s", e)
 

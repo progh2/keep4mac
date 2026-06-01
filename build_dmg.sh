@@ -3,7 +3,7 @@
 set -e
 
 APP_NAME="keeptray"
-VERSION="0.1.89"
+VERSION="0.1.90"
 DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 TMP_DMG="/tmp/${APP_NAME}_tmp.dmg"
 MOUNT_DIR="/tmp/${APP_NAME}_mount"

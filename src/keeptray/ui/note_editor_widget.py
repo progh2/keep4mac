@@ -846,7 +846,7 @@ class NoteEditorWidget(QWidget):
 
         for url in urls:
             display = short_url(url, 45)
-            lbl = QLabel(f'<a href="{url}" style="color:#007AFF;">{display}</a>')
+            lbl = QLabel(f'<a href="{_he(url)}" style="color:#007AFF;">{_he(display)}</a>')
             lbl.setOpenExternalLinks(True)
             lbl.setWordWrap(True)
             lbl.setStyleSheet("font-size: 12px; background: transparent;")

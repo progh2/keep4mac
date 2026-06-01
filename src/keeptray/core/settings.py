@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 _SETTINGS_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
@@ -15,9 +16,12 @@ def _load() -> dict:
 
 def _save(data: dict) -> None:
     _SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _SETTINGS_PATH.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    content = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+    fd = os.open(str(_SETTINGS_PATH), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, content)
+    finally:
+        os.close(fd)
 
 
 def get_my_email() -> str:

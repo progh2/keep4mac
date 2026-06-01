@@ -11,6 +11,7 @@ import requests
 GITHUB_REPO = "progh2/keeptray"
 _API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 _HEADERS = {"Accept": "application/vnd.github.v3+json", "User-Agent": "keeptray-updater"}
+_MAX_EXTRACT_SIZE = 500 * 1024 * 1024  # ZIP 압축 해제 최대 500 MB
 
 
 # ── 버전 비교 ──────────────────────────────────────────────────
@@ -67,6 +68,8 @@ def get_asset(assets: list) -> Optional[dict]:
 
 def download(url: str, progress_cb: Optional[Callable[[int, int], None]] = None) -> Path:
     """URL을 임시 파일로 다운로드한다. progress_cb(downloaded, total) 호출."""
+    if not url.startswith("https://"):
+        raise ValueError(f"HTTPS URL만 허용됩니다: {url}")
     suffix = ".dmg" if url.endswith(".dmg") else ".zip"
     tmp = Path(tempfile.mktemp(suffix=suffix, prefix="keeptray_upd_"))
     with requests.get(url, stream=True, timeout=120, headers=_HEADERS) as resp:
@@ -137,6 +140,9 @@ def apply_windows(zip_path: Path) -> None:
     """ZIP 압축 해제 → 배치 스크립트로 xcopy 후 재실행."""
     update_dir = Path(tempfile.mkdtemp(prefix="keeptray_upd_"))
     with zipfile.ZipFile(zip_path, "r") as z:
+        total_size = sum(i.file_size for i in z.infolist())
+        if total_size > _MAX_EXTRACT_SIZE:
+            raise RuntimeError(f"압축 해제 크기 초과: {total_size // 1024 // 1024}MB")
         z.extractall(update_dir)
     zip_path.unlink(missing_ok=True)
 
