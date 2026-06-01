@@ -4,7 +4,20 @@ Google Keep 데스크톱 트레이 앱 (macOS · Windows). 트레이 아이콘�
 
 ## 주요 구성도
 
+### 유스케이스 다이어그램
 ![keeptray 유스케이스 다이어그램](docs/usecase_diagram.png)
+
+### 컴포넌트 아키텍처
+![컴포넌트 아키텍처 다이어그램](docs/component_diagram.png)
+
+### 인증 시퀀스
+![인증 시퀀스 다이어그램](docs/auth_sequence.png)
+
+### 앱 상태 전환
+![앱 상태 다이어그램](docs/state_diagram.png)
+
+### 빌드·배포 파이프라인
+![배포 파이프라인 다이어그램](docs/deploy_pipeline.png)
 
 ## 주요 기능
 
