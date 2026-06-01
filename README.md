@@ -2,6 +2,10 @@
 
 Google Keep 데스크톱 트레이 앱 (macOS · Windows). 트레이 아이콘을 클릭하면 Keep 노트를 바로 조회·작성·수정·삭제할 수 있습니다.
 
+## 주요 구성도
+
+![keeptray 유스케이스 다이어그램](docs/usecase_diagram.png)
+
 ## 주요 기능
 
 - **메뉴바 상주** — 앱이 Dock 없이 메뉴바/트레이 아이콘으로 실행됩니다
