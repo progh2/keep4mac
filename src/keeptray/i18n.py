@@ -2,12 +2,22 @@
 import gettext as _gettext
 import json
 import locale
+import os
 import sys
 from pathlib import Path
 
 _translation: _gettext.NullTranslations | None = None
 
-_SETTINGS_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
+
+def _get_settings_path() -> Path:
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return Path(appdata) / "keeptray" / "settings.json"
+    return Path.home() / ".config" / "keeptray" / "settings.json"
+
+
+_SETTINGS_PATH = _get_settings_path()
 
 SUPPORTED_LANGS: dict[str, str] = {
     "ko": "한국어",

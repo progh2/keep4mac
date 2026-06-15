@@ -8,6 +8,7 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from keeptray.api.keep_client import KeepClient
+from keeptray.i18n import gettext as _
 from keeptray.ui.panel import MainPanel
 
 logger = logging.getLogger(__name__)
@@ -74,9 +75,9 @@ class WindowsTray:
         menu = pystray.Menu(
             pystray.MenuItem("keeptray", self._on_toggle, default=True),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("위치 초기화", self._on_reset_position),
+            pystray.MenuItem(lambda item: _("Reset Position"), self._on_reset_position),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("종료", self._on_quit),
+            pystray.MenuItem(lambda item: _("Quit keeptray"), self._on_quit),
         )
         self._icon = pystray.Icon(
             "keeptray",

@@ -1,8 +1,30 @@
 import json
 import os
+import sys
 from pathlib import Path
 
-_SETTINGS_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
+
+def _get_settings_path() -> Path:
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return Path(appdata) / "keeptray" / "settings.json"
+    return Path.home() / ".config" / "keeptray" / "settings.json"
+
+
+_SETTINGS_PATH = _get_settings_path()
+_OLD_PATH = Path.home() / ".config" / "keeptray" / "settings.json"
+
+
+def _migrate_if_needed() -> None:
+    """Windows에서 구 경로(~/.config)→ 새 경로(%APPDATA%) 자동 마이그레이션."""
+    if sys.platform == "win32" and _OLD_PATH != _SETTINGS_PATH:
+        if _OLD_PATH.exists() and not _SETTINGS_PATH.exists():
+            _SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _OLD_PATH.rename(_SETTINGS_PATH)
+
+
+_migrate_if_needed()
 
 
 def _load() -> dict:
