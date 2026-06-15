@@ -131,6 +131,7 @@ exe = EXE(
     upx=False,
     console=False,   # 콘솔 창 없음
     disable_windowed_traceback=False,
+    icon="assets/icon.ico",
 )
 
 coll = COLLECT(

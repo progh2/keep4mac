@@ -13,25 +13,41 @@ from keeptray.ui.panel import MainPanel
 logger = logging.getLogger(__name__)
 
 _ICON_SIZE = 64
-_ICON_BG = (26, 115, 232, 255)   # Google Keep 파란색
+_ICON_BG = (251, 188, 4, 255)    # Google Keep 노란색
+_ICON_FG = (255, 255, 255, 255)  # 흰색 전구
 
 
 def _make_icon_image() -> Image.Image:
-    """64×64 RGBA 트레이 아이콘을 생성한다."""
-    img = Image.new("RGBA", (_ICON_SIZE, _ICON_SIZE), (0, 0, 0, 0))
+    """64×64 RGBA 트레이 아이콘 (노란 배경 + 흰 전구, 설치 아이콘과 동일 디자인)."""
+    s = _ICON_SIZE
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    # 파란 원 배경
-    margin = 4
-    draw.ellipse(
-        [margin, margin, _ICON_SIZE - margin, _ICON_SIZE - margin],
-        fill=_ICON_BG,
-    )
-    # 노트 심볼: 흰 가로줄 3개
-    line_color = (255, 255, 255, 255)
-    lw = 3
-    x0, x1 = 16, _ICON_SIZE - 16
-    for y in (22, 32, 42):
-        draw.rectangle([x0, y - lw // 2, x1, y + lw // 2], fill=line_color)
+
+    # 노란 배경 - 둥근 사각형
+    pad = max(1, int(s * 0.04))
+    draw.rounded_rectangle([pad, pad, s - pad, s - pad],
+                           radius=int(s * 0.22), fill=_ICON_BG)
+
+    # 전구 몸통 (원)
+    cx, cy = s / 2, s * 0.40
+    bulb_r = s * 0.20
+    draw.ellipse([cx - bulb_r, cy - bulb_r, cx + bulb_r, cy + bulb_r], fill=_ICON_FG)
+
+    # 전구 받침 1단
+    bw = s * 0.16
+    bh1 = s * 0.07
+    bx0 = cx - bw / 2
+    by0 = cy + bulb_r - s * 0.015
+    draw.rounded_rectangle([bx0, by0, bx0 + bw, by0 + bh1],
+                           radius=max(1, int(s * 0.015)), fill=_ICON_FG)
+
+    # 전구 받침 2단
+    bw2 = bw * 0.72
+    bx2 = cx - bw2 / 2
+    by2 = by0 + bh1
+    draw.rounded_rectangle([bx2, by2, bx2 + bw2, by2 + s * 0.05],
+                           radius=max(1, int(s * 0.015)), fill=_ICON_FG)
+
     return img
 
 
